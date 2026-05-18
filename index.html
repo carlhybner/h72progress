@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Calorie & Weight Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff; --bg-secondary: #f5f5f4; --bg-tertiary: #eeede8;
+    --bg-info: #e6f1fb; --bg-success: #eaf3de; --bg-warning: #faeeda; --bg-danger: #fcebeb;
+    --text-primary: #1a1a18; --text-secondary: #5f5e5a; --text-tertiary: #888780;
+    --text-info: #185fa5; --text-success: #3b6d11; --text-warning: #854f0b; --text-danger: #a32d2d;
+    --border-t: rgba(0,0,0,0.1); --border-s: rgba(0,0,0,0.18); --border-p: rgba(0,0,0,0.3);
+    --radius-md: 8px; --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1c1c1a; --bg-secondary: #252523; --bg-tertiary: #2e2e2b;
+      --bg-info: #0c447c; --bg-success: #27500a; --bg-warning: #633806; --bg-danger: #791f1f;
+      --text-primary: #f0ede6; --text-secondary: #b4b2a9; --text-tertiary: #888780;
+      --text-info: #85b7eb; --text-success: #97c459; --text-warning: #ef9f27; --text-danger: #f09595;
+      --border-t: rgba(255,255,255,0.1); --border-s: rgba(255,255,255,0.18); --border-p: rgba(255,255,255,0.3);
+    }
+  }
+  html { font-size: 16px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; padding: 1.5rem 1rem; }
+  .container { max-width: 720px; margin: 0 auto; }
+  button { cursor: pointer; font-family: inherit; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 12px; flex-wrap: wrap; }
+  .greeting { font-size: 20px; font-weight: 500; color: var(--text-primary); }
+  .greeting span { color: var(--text-secondary); font-weight: 400; }
+  .top-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .icon-btn { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); padding: 7px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+  .icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .icon-btn.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-p); }
+
+  .panel { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 480px) { .settings-grid { grid-template-columns: 1fr; } }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+  .field-inp { height: 36px; padding: 0 10px; font-size: 13px; border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; width: 100%; font-family: inherit; }
+  .field-inp:focus { border-color: var(--border-p); background: var(--bg-primary); }
+  .save-btn { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-primary); padding: 7px 16px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .save-btn:hover { background: var(--bg-secondary); }
+
+  /* Dashboard */
+  .dash-section-title { font-size: 11px; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.06em; margin-bottom: 8px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
+  .stat-card-lbl { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+  .stat-card-val { font-size: 22px; font-weight: 500; color: var(--text-primary); line-height: 1.1; }
+  .stat-card-unit { font-size: 12px; color: var(--text-secondary); margin-left: 3px; font-weight: 400; }
+  .stat-card-sub { font-size: 11px; margin-top: 4px; }
+  .delta-pill { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+  .pill-loss { background: var(--bg-success); color: var(--text-success); }
+  .pill-gain { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-none { background: var(--bg-secondary); color: var(--text-secondary); border: 0.5px solid var(--border-t); }
+  .chart-wrap { position: relative; width: 100%; height: 220px; }
+  .divider { height: 0.5px; background: var(--border-t); margin: 14px 0; }
+  .periods-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+  .period-stat { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 0.625rem 0.875rem; }
+  .period-stat-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .period-stat-badge { font-size: 10px; padding: 1px 7px; border-radius: 20px; font-weight: 500; }
+  .empty-dash { font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 1.5rem 0; }
+
+  /* Period cards */
+  .period-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: var(--radius-lg); margin-bottom: 1.25rem; overflow: hidden; }
+  .period-header { padding: 0.875rem 1.25rem; border-bottom: 0.5px solid var(--border-t); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .period-title { font-size: 14px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .period-goal-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .goal-label { font-size: 12px; color: var(--text-secondary); }
+  .goal-select, .goal-input { font-size: 13px; padding: 4px 8px; height: 30px; border-radius: var(--radius-md); border: 0.5px solid var(--border-s); background: var(--bg-secondary); color: var(--text-primary); outline: none; font-family: inherit; }
+  .goal-input { width: 80px; }
+  .goal-select:focus, .goal-input:focus { border-color: var(--border-p); background: var(--bg-primary); }
+  .goal-badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+  .badge-deficit  { background: var(--bg-warning);  color: var(--text-warning); }
+  .badge-maintain { background: var(--bg-info);     color: var(--text-info); }
+  .badge-surplus  { background: var(--bg-success);  color: var(--text-success); }
+
+  .week-section { border-bottom: 0.5px solid var(--border-t); }
+  .week-section:last-of-type { border-bottom: none; }
+  .week-header { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem; cursor: pointer; user-select: none; background: var(--bg-secondary); }
+  .week-title { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+  .week-mini-stats { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .mini-stat { font-size: 11px; color: var(--text-secondary); }
+  .mini-stat b { font-weight: 500; color: var(--text-primary); }
+  .weight-delta { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 20px; }
+  .delta-loss { background: var(--bg-success); color: var(--text-success); }
+  .delta-gain { background: var(--bg-danger);  color: var(--text-danger); }
+
+  .week-body { padding: 0.5rem 1.25rem 0.625rem; }
+  .col-headers { display: grid; grid-template-columns: 52px 1fr 1fr 68px 24px; gap: 8px; padding: 5px 0 3px; border-bottom: 0.5px solid var(--border-t); }
+  .col-hdr { font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.04em; }
+  .day-row { display: grid; grid-template-columns: 52px 1fr 1fr 68px 24px; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 0.5px solid var(--border-t); }
+  .day-row:last-child { border-bottom: none; }
+  .day-lbl { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .day-inp { width: 100%; height: 28px; padding: 0 7px; font-size: 12px; border: 0.5px solid var(--border-t); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; font-family: inherit; }
+  .day-inp:focus { border-color: var(--border-p); background: var(--bg-primary); }
+  .day-inp::placeholder { color: var(--text-tertiary); }
+  .cal-bar-wrap { height: 4px; border-radius: 2px; background: var(--border-t); overflow: hidden; margin-top: 3px; }
+  .cal-bar { height: 100%; border-radius: 2px; }
+  .bar-ok { background: #639922; } .bar-over { background: #E24B4A; }
+  .clr-btn { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border-t); border-radius: var(--radius-md); background: transparent; color: var(--text-tertiary); font-size: 11px; }
+  .clr-btn:hover { border-color: var(--border-s); color: var(--text-secondary); }
+
+  .week-summary { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; padding: 0.75rem 1.25rem; background: var(--bg-secondary); border-top: 0.5px solid var(--border-t); }
+  .sum-card { background: var(--bg-primary); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; }
+  .sum-lbl { font-size: 10px; color: var(--text-secondary); margin-bottom: 2px; }
+  .sum-val { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+  .sum-unit { font-size: 10px; color: var(--text-secondary); margin-left: 2px; }
+  .sum-sub { font-size: 10px; margin-top: 2px; }
+
+  .collapsed .week-body, .collapsed .week-summary { display: none; }
+  .chevron { transition: transform 0.2s; font-size: 13px; color: var(--text-tertiary); }
+  .collapsed .chevron { transform: rotate(-90deg); }
+  .add-btn { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); padding: 6px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; font-family: inherit; }
+  .add-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+
+  @media (max-width: 540px) {
+    body { padding: 1rem 0.625rem; }
+    .greeting { font-size: 17px; }
+    .period-header { flex-direction: column; align-items: flex-start; }
+    .col-headers, .day-row { grid-template-columns: 44px 1fr 1fr 24px; }
+    .col-hdr:nth-child(4), .vs-goal-cell { display: none; }
+    .week-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .sum-card:last-child { grid-column: span 2; }
+    .periods-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container"><div id="app"></div></div>
+<script>
+var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var KEY='caltracker_v5';
+var chartInst=null;
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||null}catch{return null}}
+function save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch{}}
+function addDays(s,n){var d=new Date(s);d.setDate(d.getDate()+n);return d}
+function fmtDate(d){return d.toLocaleDateString('en-SE',{day:'numeric',month:'short'})}
+function weekLabel(s,twi){return fmtDate(addDays(s,twi*7))+' \u2013 '+fmtDate(addDays(s,twi*7+6))}
+function periodLabel(s,pi){return fmtDate(addDays(s,pi*28))+' \u2013 '+fmtDate(addDays(s,pi*28+27))}
+function makeWeek(){return{collapsed:true,days:DAYS.map(function(d){return{day:d,weight:'',calories:''}})} }
+function makePeriod(){return{goal:'maintain',calGoal:2000,weeks:[makeWeek(),makeWeek(),makeWeek(),makeWeek()]}}
+
+var data=load();
+if(!data){
+  var t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);
+  m.setDate(t.getDate()-dow);
+  data={name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,periods:[makePeriod()]};
+}
+
+function weekStats(week){
+  var wts=week.days.map(function(d){return parseFloat(d.weight)}).filter(function(v){return !isNaN(v)&&v>0});
+  var cals=week.days.map(function(d){return parseInt(d.calories)}).filter(function(v){return !isNaN(v)&&v>0});
+  return{avgWeight:wts.length?(wts.reduce(function(a,b){return a+b},0)/wts.length):null,totalCal:cals.length?cals.reduce(function(a,b){return a+b},0):null,loggedDays:cals.length};
+}
+
+function getStartingWeight(){
+  for(var i=0;i<data.periods.length;i++){var p=data.periods[i];for(var j=0;j<p.weeks.length;j++){var s=weekStats(p.weeks[j]);if(s.avgWeight!==null)return s.avgWeight;}}
+  return null;
+}
+function getLastWeekWeight(){
+  var last=null;
+  data.periods.forEach(function(p){p.weeks.forEach(function(w){var s=weekStats(w);if(s.avgWeight!==null)last=s.avgWeight;})});
+  return last;
+}
+function getPeriodStartWeight(pi){
+  var p=data.periods[pi];if(!p)return null;
+  for(var j=0;j<p.weeks.length;j++){var s=weekStats(p.weeks[j]);if(s.avgWeight!==null)return s.avgWeight;}
+  return null;
+}
+function getPeriodEndWeight(pi){
+  var p=data.periods[pi];if(!p)return null;
+  var last=null;p.weeks.forEach(function(w){var s=weekStats(w);if(s.avgWeight!==null)last=s.avgWeight;});return last;
+}
+function isPeriodCompleted(pi){
+  var p=data.periods[pi];if(!p)return false;
+  return p.weeks.filter(function(w){return weekStats(w).avgWeight!==null}).length>=2;
+}
+
+function deltaPill(diff){
+  if(diff===null||isNaN(diff))return '<span class="delta-pill pill-none">\u2014</span>';
+  var sign=diff>0?'+':'';
+  var cls=diff<0?'pill-loss':diff>0?'pill-gain':'pill-none';
+  var icon=diff<0?'ti-trending-down':diff>0?'ti-trending-up':'ti-minus';
+  return '<span class="delta-pill '+cls+'"><i class="ti '+icon+'" aria-hidden="true" style="font-size:11px"></i>'+sign+diff.toFixed(1)+' kg</span>';
+}
+
+function buildChart(){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  var canvas=document.getElementById('dash-chart');if(!canvas)return;
+  var labels=[],weights=[];
+  data.periods.forEach(function(p,pi){
+    p.weeks.forEach(function(w,wi){
+      labels.push(fmtDate(addDays(data.startDate,(pi*4+wi)*7)));
+      var s=weekStats(w);weights.push(s.avgWeight!==null?parseFloat(s.avgWeight.toFixed(1)):null);
+    });
+  });
+  var isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+  var gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
+  var tc=isDark?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.35)';
+  chartInst=new Chart(canvas,{type:'line',data:{labels:labels,datasets:[{label:'Avg weight (kg)',data:weights,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.07)',pointBackgroundColor:'#185FA5',pointBorderColor:'#185FA5',pointRadius:5,pointHoverRadius:7,borderWidth:2,tension:0.35,fill:true,spanGaps:true}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y!==null?c.parsed.y.toFixed(1)+' kg':'No data'}}}},
+  scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxRotation:40,autoSkip:true,maxTicksLimit:12}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10},callback:function(v){return v+' kg'}},grace:'5%'}}}});
+}
+
+function renderDash(app){
+  var panel=document.createElement('div');panel.className='panel';
+  var startW=getStartingWeight(),lastW=getLastWeekWeight();
+  var totalDiff=(startW!==null&&lastW!==null&&startW!==lastW)?(lastW-startW):null;
+
+  var statsHtml='<div class="dash-section-title">OVERVIEW</div><div class="stat-grid">'+
+    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-calendar-stats" aria-hidden="true" style="font-size:13px"></i>Starting weight</div>'+
+    '<div class="stat-card-val">'+(startW!==null?startW.toFixed(1):'&#8212;')+'<span class="stat-card-unit">'+(startW!==null?'kg':'')+'</span></div>'+
+    '<div class="stat-card-sub" style="color:var(--text-tertiary)">'+(startW!==null?'First logged week':'Log weight to begin')+'</div></div>'+
+    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-scale" aria-hidden="true" style="font-size:13px"></i>Last week\'s avg</div>'+
+    '<div class="stat-card-val">'+(lastW!==null?lastW.toFixed(1):'&#8212;')+'<span class="stat-card-unit">'+(lastW!==null?'kg':'')+'</span></div>'+
+    '<div class="stat-card-sub">'+(lastW!==null&&startW!==null?deltaPill(totalDiff):'<span style="color:var(--text-tertiary)">vs start</span>')+'</div></div>'+
+    '</div>';
+
+  var chartHtml='<div class="dash-section-title">WEIGHT OVER TIME</div>'+
+    '<div class="chart-wrap"><canvas id="dash-chart" role="img" aria-label="Weekly average weight chart">Weekly average weight data.</canvas></div>';
+
+  var periodsHtml='';
+  var completed=data.periods.map(function(p,pi){return{p:p,pi:pi}}).filter(function(x){return isPeriodCompleted(x.pi)});
+  if(completed.length>0){
+    periodsHtml='<div class="divider"></div><div class="dash-section-title">CHANGE PER 4-WEEK PERIOD</div><div class="periods-grid">';
+    completed.forEach(function(x){
+      var pStart=getPeriodStartWeight(x.pi),pEnd=getPeriodEndWeight(x.pi);
+      var pDiff=(pStart!==null&&pEnd!==null)?(pEnd-pStart):null;
+      var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[x.p.goal]||'badge-maintain';
+      var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[x.p.goal]||'Maintain';
+      var fromTo=(pStart!==null?pStart.toFixed(1)+' kg':'')+' \u2192 '+(pEnd!==null?pEnd.toFixed(1)+' kg':'');
+      periodsHtml+='<div class="period-stat">'+
+        '<div class="period-stat-label"><span>Period '+(x.pi+1)+'</span><span class="period-stat-badge '+bc+'">'+bl+'</span></div>'+
+        '<div style="font-size:10px;color:var(--text-tertiary);margin-bottom:6px">'+periodLabel(data.startDate,x.pi)+'</div>'+
+        '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">'+fromTo+'</div>'+
+        deltaPill(pDiff)+'</div>';
+    });
+    periodsHtml+='</div>';
+  } else {
+    periodsHtml='<div class="divider"></div><div class="empty-dash"><i class="ti ti-clock" aria-hidden="true" style="font-size:18px;display:block;margin-bottom:6px"></i>Period breakdowns appear once you have logged data across at least 2 weeks.</div>';
+  }
+
+  panel.innerHTML=statsHtml+chartHtml+periodsHtml;
+  app.appendChild(panel);
+  setTimeout(buildChart,50);
+}
+
+function render(){
+  save(data);
+  var app=document.getElementById('app');app.innerHTML='';
+
+  var topBar=document.createElement('div');topBar.className='top-bar';
+  var gn=data.name?', '+data.name:'';
+  topBar.innerHTML='<div class="greeting">My tracker<span>'+gn+'</span></div>'+
+    '<div class="top-btns">'+
+    '<button class="icon-btn'+(data.showDash?' active':'')+'" id="toggle-dash"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</button>'+
+    '<button class="icon-btn'+(data.showSettings?' active':'')+'" id="toggle-settings"><i class="ti ti-settings" aria-hidden="true"></i>Settings</button>'+
+    '</div>';
+  app.appendChild(topBar);
+
+  if(data.showSettings){
+    var sp=document.createElement('div');sp.className='panel';
+    sp.innerHTML='<div class="settings-grid">'+
+      '<div class="field-group"><label class="field-label" for="inp-name">Your name</label><input class="field-inp" id="inp-name" type="text" placeholder="e.g. Carl" value="'+(data.name||'')+'"></div>'+
+      '<div class="field-group"><label class="field-label" for="inp-date">First week starts (Monday)</label><input class="field-inp" id="inp-date" type="date" value="'+(data.startDate||'')+'"></div>'+
+      '</div><button class="save-btn" id="save-settings"><i class="ti ti-check" aria-hidden="true"></i>Save</button>';
+    app.appendChild(sp);
+  }
+
+  if(data.showDash) renderDash(app);
+
+  data.periods.forEach(function(period,pi){
+    var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[period.goal]||'badge-maintain';
+    var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[period.goal]||'Maintain';
+    var pLabel='Period '+(pi+1)+' \u2014 '+periodLabel(data.startDate,pi);
+    var card=document.createElement('div');card.className='period-card';
+    card.innerHTML='<div class="period-header">'+
+      '<div class="period-title"><i class="ti ti-calendar" aria-hidden="true" style="font-size:15px;color:var(--text-secondary)"></i><span>'+pLabel+'</span><span class="goal-badge '+bc+'">'+bl+'</span></div>'+
+      '<div class="period-goal-row"><span class="goal-label">Goal:</span>'+
+      '<select class="goal-select" data-pi="'+pi+'" data-field="goal"><option value="deficit"'+(period.goal==='deficit'?' selected':'')+'>Deficit</option><option value="maintain"'+(period.goal==='maintain'?' selected':'')+'>Maintain</option><option value="surplus"'+(period.goal==='surplus'?' selected':'')+'>Surplus</option></select>'+
+      '<span class="goal-label">Daily:</span><input class="goal-input" type="number" min="500" max="10000" step="50" value="'+period.calGoal+'" data-pi="'+pi+'" data-field="calGoal" aria-label="Daily calorie goal">'+
+      '<span class="goal-label">kcal</span></div></div>';
+
+    period.weeks.forEach(function(week,wi){
+      var totalWi=pi*4+wi,stats=weekStats(week),goalCal=period.calGoal||2000;
+      var prevWeek=wi>0?period.weeks[wi-1]:(pi>0&&data.periods[pi-1].weeks.length?data.periods[pi-1].weeks[data.periods[pi-1].weeks.length-1]:null);
+      var prevStats=prevWeek?weekStats(prevWeek):null;
+      var wLabel=weekLabel(data.startDate,totalWi);
+      var dHtml='';
+      if(stats.avgWeight!==null&&prevStats&&prevStats.avgWeight){
+        var diff=stats.avgWeight-prevStats.avgWeight;
+        dHtml='<span class="weight-delta '+(diff<0?'delta-loss':'delta-gain')+'">'+(diff>0?'+':'')+diff.toFixed(1)+' kg</span>';
+      }
+      var avgW=stats.avgWeight!==null?stats.avgWeight.toFixed(1):'\u2014';
+      var totalC=stats.totalCal!==null?stats.totalCal.toLocaleString():'\u2014';
+      var calVsGoal=stats.totalCal!==null?stats.totalCal-goalCal*7:null;
+      var calVsStr=calVsGoal!==null?(calVsGoal>=0?'+':'')+calVsGoal.toLocaleString()+' kcal':'';
+      var vsColor=calVsGoal===null?'var(--text-tertiary)':calVsGoal>0?'var(--text-danger)':'var(--text-success)';
+
+      var sec=document.createElement('div');sec.className='week-section'+(week.collapsed?' collapsed':'');
+      var dayRows=week.days.map(function(d,di){
+        var cal=parseInt(d.calories)||0,pct=cal&&goalCal?Math.min((cal/goalCal)*100,100):0,over=cal>goalCal&&cal>0;
+        var calDiff=cal&&goalCal?cal-goalCal:null;
+        var diffStr=calDiff!==null?(calDiff>=0?'+'+calDiff.toLocaleString():calDiff.toLocaleString()):'-';
+        var dc=calDiff===null?'var(--text-tertiary)':calDiff>0?'var(--text-danger)':'var(--text-success)';
+        return '<div class="day-row">'+
+          '<span class="day-lbl">'+d.day+'</span>'+
+          '<input class="day-inp" type="number" step="0.1" min="0" max="300" placeholder="kg" value="'+d.weight+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="weight" aria-label="'+d.day+' weight">'+
+          '<div><input class="day-inp" type="number" step="1" min="0" max="20000" placeholder="kcal" value="'+d.calories+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="calories" aria-label="'+d.day+' calories">'+
+          '<div class="cal-bar-wrap"><div class="cal-bar '+(over?'bar-over':'bar-ok')+'" style="width:'+pct+'%"></div></div></div>'+
+          '<span class="vs-goal-cell" style="font-size:11px;font-weight:500;color:'+dc+';text-align:right;padding-right:2px">'+diffStr+'</span>'+
+          '<button class="clr-btn" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" aria-label="Clear '+d.day+'"><i class="ti ti-x" aria-hidden="true"></i></button></div>';
+      }).join('');
+
+      sec.innerHTML='<div class="week-header" data-pi="'+pi+'" data-wi="'+wi+'">'+
+        '<span class="week-title">'+wLabel+'</span>'+
+        '<div class="week-mini-stats">'+dHtml+
+        '<span class="mini-stat"><i class="ti ti-scale" aria-hidden="true" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgW+'</b>'+(stats.avgWeight!==null?' kg':'')+'</span>'+
+        '<span class="mini-stat"><i class="ti ti-flame" aria-hidden="true" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+totalC+'</b>'+(stats.totalCal!==null?' kcal':'')+'</span>'+
+        '<i class="ti ti-chevron-down chevron" aria-hidden="true"></i></div></div>'+
+        '<div class="week-body"><div class="col-headers"><div class="col-hdr">Day</div><div class="col-hdr">Weight (kg)</div><div class="col-hdr">Calories</div><div class="col-hdr vs-goal-cell">vs goal</div><div></div></div>'+dayRows+'</div>'+
+        '<div class="week-summary">'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-scale" aria-hidden="true" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg weight</div><div class="sum-val">'+avgW+'<span class="sum-unit">'+(stats.avgWeight!==null?'kg':'')+'</span></div><div class="sum-sub">'+(dHtml||'<span style="color:var(--text-tertiary)">\u2014</span>')+'</div></div>'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-flame" aria-hidden="true" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Weekly total</div><div class="sum-val">'+totalC+'<span class="sum-unit">'+(stats.totalCal!==null?'kcal':'')+'</span></div><div class="sum-sub" style="color:'+vsColor+'">'+(calVsStr||'\u2014')+'</div></div>'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-target" aria-hidden="true" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Daily goal</div><div class="sum-val">'+goalCal.toLocaleString()+'<span class="sum-unit">kcal</span></div><div class="sum-sub" style="color:var(--text-tertiary)">'+stats.loggedDays+' day'+(stats.loggedDays!==1?'s':'')+' logged</div></div>'+
+        '</div>';
+      card.appendChild(sec);
+    });
+
+    var ar=document.createElement('div');ar.style.cssText='padding:7px 1.25rem;border-top:0.5px solid var(--border-t)';
+    ar.innerHTML='<button class="add-btn" data-pi="'+pi+'" data-action="addweek"><i class="ti ti-plus" aria-hidden="true"></i>Add week</button>';
+    card.appendChild(ar);app.appendChild(card);
+  });
+
+  var apw=document.createElement('div');apw.style.cssText='text-align:center;padding:0.25rem 0 1rem';
+  apw.innerHTML='<button class="add-btn" id="add-period"><i class="ti ti-plus" aria-hidden="true"></i>Add 4-week period</button>';
+  app.appendChild(apw);
+
+  document.getElementById('toggle-dash').addEventListener('click',function(){data.showDash=!data.showDash;render()});
+  document.getElementById('toggle-settings').addEventListener('click',function(){data.showSettings=!data.showSettings;render()});
+  var ss=document.getElementById('save-settings');
+  if(ss)ss.addEventListener('click',function(){
+    var n=document.getElementById('inp-name').value.trim(),dv=document.getElementById('inp-date').value;
+    if(n!==undefined)data.name=n;if(dv)data.startDate=dv;data.showSettings=false;render();
+  });
+  app.querySelectorAll('.week-header').forEach(function(h){
+    h.addEventListener('click',function(){var pi=parseInt(h.dataset.pi),wi=parseInt(h.dataset.wi);data.periods[pi].weeks[wi].collapsed=!data.periods[pi].weeks[wi].collapsed;render()});
+  });
+  app.querySelectorAll('.day-inp').forEach(function(inp){
+    inp.addEventListener('change',function(e){var d=e.target.dataset;data.periods[parseInt(d.pi)].weeks[parseInt(d.wi)].days[parseInt(d.di)][d.field]=e.target.value;save(data);render()});
+  });
+  app.querySelectorAll('.clr-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();var d=btn.dataset,day=data.periods[parseInt(d.pi)].weeks[parseInt(d.wi)].days[parseInt(d.di)];day.weight='';day.calories='';render()});
+  });
+  app.querySelectorAll('[data-field="goal"]').forEach(function(sel){
+    sel.addEventListener('change',function(e){data.periods[parseInt(e.target.dataset.pi)].goal=e.target.value;render()});
+  });
+  app.querySelectorAll('[data-field="calGoal"]').forEach(function(inp){
+    inp.addEventListener('change',function(e){var v=parseInt(e.target.value);if(!isNaN(v)&&v>0){data.periods[parseInt(e.target.dataset.pi)].calGoal=v;save(data);render()}});
+  });
+  app.querySelectorAll('[data-action="addweek"]').forEach(function(btn){
+    btn.addEventListener('click',function(){data.periods[parseInt(btn.dataset.pi)].weeks.push(makeWeek());render()});
+  });
+  var ap=document.getElementById('add-period');
+  if(ap)ap.addEventListener('click',function(){data.periods.push(makePeriod());render()});
+}
+
+render();
+</script>
+</body>
+</html>
