@@ -30,23 +30,22 @@
   .container { max-width: 740px; margin: 0 auto; }
   button { cursor: pointer; font-family: inherit; }
 
-  /* ── Auth screen ── */
+  /* ── Auth ── */
   .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-  .auth-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: var(--radius-lg); padding: 2rem 2rem; width: 100%; max-width: 380px; }
+  .auth-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 380px; }
   .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 1.75rem; }
   .auth-logo img { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(167,139,250,0.35)); }
   .auth-logo-name { font-size: 26px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
   .auth-logo-sub { font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.12em; margin-top: 3px; font-weight: 500; }
   .auth-tabs { display: flex; border: 0.5px solid var(--border-t); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.25rem; }
-  .auth-tab { flex: 1; padding: 8px; font-size: 13px; font-weight: 500; background: transparent; border: none; color: var(--text-secondary); transition: background 0.15s; }
+  .auth-tab { flex: 1; padding: 8px; font-size: 13px; font-weight: 500; background: transparent; border: none; color: var(--text-secondary); }
   .auth-tab.active { background: var(--bg-secondary); color: var(--text-primary); }
   .auth-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
   .auth-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
   .auth-inp { height: 38px; padding: 0 12px; font-size: 14px; border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; width: 100%; font-family: inherit; }
   .auth-inp:focus { border-color: var(--border-p); background: var(--bg-primary); }
   .auth-btn { width: 100%; height: 40px; border: none; border-radius: var(--radius-md); background: linear-gradient(90deg,#60c8f5,#a78bfa); color: #fff; font-size: 14px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .auth-btn:hover { opacity: 0.9; }
-  .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .auth-btn:hover { opacity: 0.9; } .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .auth-error { font-size: 12px; color: var(--text-danger); background: var(--bg-danger); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 10px; display: none; }
   .auth-error.show { display: block; }
 
@@ -55,8 +54,6 @@
   .spinner { width: 28px; height: 28px; border: 2.5px solid var(--border-t); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 13px; color: var(--text-tertiary); }
-
-  /* ── Sync indicator ── */
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #639922; display: inline-block; margin-left: 6px; vertical-align: middle; }
   .sync-dot.syncing { background: #ef9f27; animation: pulse 1s ease-in-out infinite; }
   .sync-dot.error { background: #E24B4A; }
@@ -89,9 +86,10 @@
 
   /* ── Dashboard ── */
   .dash-section-title { font-size: 11px; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.06em; margin-bottom: 8px; }
-  .stat-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-bottom: 10px; }
   @media (max-width: 500px) { .stat-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
   .stat-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: .75rem 1rem; }
+  .stat-card.highlight { border: 0.5px solid var(--border-s); }
   .stat-card-lbl { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
   .stat-card-val { font-size: 20px; font-weight: 500; color: var(--text-primary); line-height: 1.1; }
   .stat-card-unit { font-size: 11px; color: var(--text-secondary); margin-left: 3px; font-weight: 400; }
@@ -153,8 +151,8 @@
   .day-inp::placeholder { color: var(--text-tertiary); }
   .bar-wrap { height: 4px; border-radius: 2px; background: var(--border-t); overflow: hidden; margin-top: 3px; }
   .bar-fill { height: 100%; border-radius: 2px; }
-  .bar-ok { background: #639922; } .bar-over { background: #E24B4A; }
-  .bar-steps-ok { background: #7c3aed; } .bar-steps-over { background: #059669; }
+  .bar-ok   { background: #639922; }
+  .bar-over { background: #E24B4A; }
   .clr-btn { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 0.5px solid var(--border-t); border-radius: var(--radius-md); background: transparent; color: var(--text-tertiary); font-size: 11px; }
   .clr-btn:hover { border-color: var(--border-s); color: var(--text-secondary); }
 
@@ -186,7 +184,6 @@
 </head>
 <body>
 
-<!-- Auth screen -->
 <div class="auth-wrap" id="auth-screen" style="display:none">
   <div class="auth-card">
     <div class="auth-logo">
@@ -216,18 +213,15 @@
   </div>
 </div>
 
-<!-- Loading screen -->
 <div class="loading-wrap" id="loading-screen">
   <div class="spinner"></div>
   <div class="loading-text">Loading…</div>
 </div>
 
-<!-- Main app -->
 <div class="container" id="main-app" style="display:none">
   <div id="app"></div>
 </div>
 
-<!-- Firebase SDKs -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
@@ -245,11 +239,10 @@ const firebaseConfig = {
   measurementId: "G-N5RNH8M1L0"
 };
 
-const fbApp  = initializeApp(firebaseConfig);
-const auth   = getAuth(fbApp);
-const db     = getFirestore(fbApp);
+const fbApp = initializeApp(firebaseConfig);
+const auth  = getAuth(fbApp);
+const db    = getFirestore(fbApp);
 
-// ── Expose to global scope so non-module functions can call them ──
 window._auth    = auth;
 window._db      = db;
 window._signOut = () => signOut(auth);
@@ -261,10 +254,7 @@ window._saveToFirebase = async function(data) {
   try {
     await setDoc(window._docRef(auth.currentUser.uid), { payload: JSON.stringify(data) });
     setSyncState('ok');
-  } catch(e) {
-    console.error('Save error', e);
-    setSyncState('error');
-  }
+  } catch(e) { console.error('Save error', e); setSyncState('error'); }
 };
 
 window._loadFromFirebase = async function(uid) {
@@ -276,18 +266,16 @@ window._loadFromFirebase = async function(uid) {
 };
 
 window.submitAuth = async function() {
-  const email    = document.getElementById('auth-email').value.trim();
+  const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
-  const confirm  = document.getElementById('auth-confirm').value;
-  const errEl    = document.getElementById('auth-error');
-  const btn      = document.getElementById('auth-submit');
+  const confirm = document.getElementById('auth-confirm').value;
+  const errEl = document.getElementById('auth-error');
+  const btn = document.getElementById('auth-submit');
   const isSignup = window._authMode === 'signup';
   errEl.className = 'auth-error';
-
   if (!email || !password) { showAuthError('Please fill in all fields.'); return; }
   if (isSignup && password !== confirm) { showAuthError('Passwords do not match.'); return; }
   if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
-
   btn.disabled = true;
   try {
     if (isSignup) await createUserWithEmailAndPassword(auth, email, password);
@@ -295,11 +283,11 @@ window.submitAuth = async function() {
   } catch(e) {
     btn.disabled = false;
     const msgs = {
-      'auth/user-not-found':    'No account found with that email.',
-      'auth/wrong-password':    'Incorrect password.',
+      'auth/user-not-found': 'No account found with that email.',
+      'auth/wrong-password': 'Incorrect password.',
       'auth/email-already-in-use': 'An account with that email already exists.',
-      'auth/invalid-email':     'Please enter a valid email address.',
-      'auth/invalid-credential':'Incorrect email or password.',
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/invalid-credential': 'Incorrect email or password.',
     };
     showAuthError(msgs[e.code] || 'Something went wrong. Please try again.');
   }
@@ -307,39 +295,35 @@ window.submitAuth = async function() {
 
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
-  el.textContent = msg;
-  el.className = 'auth-error show';
+  el.textContent = msg; el.className = 'auth-error show';
 }
 
 window._authMode = 'login';
 window.switchTab = function(mode) {
   window._authMode = mode;
-  document.getElementById('tab-login').className  = 'auth-tab' + (mode==='login'?' active':'');
-  document.getElementById('tab-signup').className = 'auth-tab' + (mode==='signup'?' active':'');
+  document.getElementById('tab-login').className  = 'auth-tab'+(mode==='login'?' active':'');
+  document.getElementById('tab-signup').className = 'auth-tab'+(mode==='signup'?' active':'');
   document.getElementById('confirm-field').style.display = mode==='signup'?'flex':'none';
   document.getElementById('auth-btn-label').textContent  = mode==='signup'?'Create account':'Sign in';
   document.getElementById('auth-error').className = 'auth-error';
 };
 
-// ── Auth state listener ──
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display   = 'none';
     document.getElementById('loading-screen').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
+    document.getElementById('main-app').style.display       = 'none';
     const remote = await window._loadFromFirebase(user.uid);
     if (remote) {
       window._appData = remote;
     } else {
-      // New user — initialise fresh data
       const t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);
       m.setDate(t.getDate()-dow);
       window._appData = {name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,periods:[makePeriod()]};
     }
-    // Migrate old data missing stepGoal
     window._appData.periods.forEach(function(p){if(!p.stepGoal)p.stepGoal=8000;});
     document.getElementById('loading-screen').style.display = 'none';
-    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('main-app').style.display       = 'block';
     render();
   } else {
     document.getElementById('loading-screen').style.display = 'none';
@@ -350,30 +334,27 @@ onAuthStateChanged(auth, async (user) => {
 </script>
 
 <script>
-// ── Sync indicator ──
 function setSyncState(state) {
   var dot = document.getElementById('sync-dot');
   if (!dot) return;
-  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='error'?' error':'');
-  dot.title = state==='syncing'?'Saving…':state==='error'?'Save failed — check connection':'Saved';
+  dot.className = 'sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  dot.title = state==='syncing'?'Saving…':state==='error'?'Save failed':'Saved';
 }
 
 var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 var chartWeightInst=null, chartStepsInst=null;
 var saveTimer=null;
 
-function scheduleSave() {
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(function(){
-    if (window._saveToFirebase && window._appData) window._saveToFirebase(window._appData);
-  }, 1200);
+function scheduleSave(){
+  if(saveTimer)clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){if(window._saveToFirebase&&window._appData)window._saveToFirebase(window._appData);},1200);
 }
 
 function addDays(s,n){var d=new Date(s);d.setDate(d.getDate()+n);return d}
 function fmtDate(d){return d.toLocaleDateString('en-SE',{day:'numeric',month:'short'})}
 function weekLabel(s,twi){return fmtDate(addDays(s,twi*7))+' \u2013 '+fmtDate(addDays(s,twi*7+6))}
 function periodLabel(s,pi){return fmtDate(addDays(s,pi*28))+' \u2013 '+fmtDate(addDays(s,pi*28+27))}
-function makeWeek(){return{collapsed:true,days:DAYS.map(function(d){return{day:d,weight:'',calories:'',steps:''}})} }
+function makeWeek(){return{collapsed:true,days:DAYS.map(function(d){return{day:d,weight:'',calories:'',steps:''}})}}
 function makePeriod(){return{goal:'maintain',calGoal:2000,stepGoal:8000,weeks:[makeWeek(),makeWeek(),makeWeek(),makeWeek()]}}
 
 function weekStats(week){
@@ -388,19 +369,56 @@ function weekStats(week){
   };
 }
 
-function getStartingWeight(){
-  for(var i=0;i<window._appData.periods.length;i++){var p=window._appData.periods[i];for(var j=0;j<p.weeks.length;j++){var s=weekStats(p.weeks[j]);if(s.avgWeight!==null)return s.avgWeight;}}
-  return null;
-}
-function getLastWeekWeight(){
-  var last=null;window._appData.periods.forEach(function(p){p.weeks.forEach(function(w){var s=weekStats(w);if(s.avgWeight!==null)last=s.avgWeight;})});return last;
-}
-function getLastAndPrevSteps(){
+// Returns a flat ordered list of all weeks with stats
+function getAllWeeksFlat(){
   var all=[];
-  window._appData.periods.forEach(function(p){p.weeks.forEach(function(w){var s=weekStats(w);all.push(s.avgSteps);})});
-  var results=[null,null],found=0;
-  for(var i=all.length-1;i>=0;i--){if(all[i]!==null){results[found]=all[i];found++;if(found===2)break;}}
-  return{last:results[0],prev:results[1]};
+  window._appData.periods.forEach(function(p,pi){
+    p.weeks.forEach(function(w,wi){
+      all.push({week:w,period:p,pi:pi,wi:wi,stats:weekStats(w)});
+    });
+  });
+  return all;
+}
+
+// Determines which week index is "current" and which is "last full"
+// Current week = the week whose Monday <= today <= Sunday
+// Last full week = the week immediately before current week that has any data
+function getCurrentAndLastWeekIndices(){
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  var startDate=new Date(window._appData.startDate);
+  startDate.setHours(0,0,0,0);
+  var allWeeks=getAllWeeksFlat();
+  var currentIdx=-1;
+  for(var i=0;i<allWeeks.length;i++){
+    var wMon=new Date(startDate);
+    wMon.setDate(startDate.getDate()+(allWeeks[i].pi*4+allWeeks[i].wi)*7);
+    wMon.setHours(0,0,0,0);
+    var wSun=new Date(wMon);
+    wSun.setDate(wMon.getDate()+6);
+    wSun.setHours(23,59,59,999);
+    if(today>=wMon&&today<=wSun){currentIdx=i;break;}
+  }
+  // If today is before all weeks, treat week 0 as current
+  if(currentIdx===-1&&allWeeks.length>0){
+    var firstMon=new Date(startDate);
+    if(today<firstMon)currentIdx=0;
+    else currentIdx=allWeeks.length-1; // past all defined weeks
+  }
+  // Last full week = last week before currentIdx that has data
+  var lastFullIdx=-1;
+  for(var j=currentIdx-1;j>=0;j--){
+    if(allWeeks[j].stats.avgWeight!==null||allWeeks[j].stats.avgSteps!==null){lastFullIdx=j;break;}
+  }
+  // If no week before current has data, try the week before regardless
+  if(lastFullIdx===-1&&currentIdx>0)lastFullIdx=currentIdx-1;
+  return{currentIdx:currentIdx,lastFullIdx:lastFullIdx,allWeeks:allWeeks};
+}
+
+function getStartingWeight(){
+  var all=getAllWeeksFlat();
+  for(var i=0;i<all.length;i++){if(all[i].stats.avgWeight!==null)return all[i].stats.avgWeight;}
+  return null;
 }
 function getPeriodStartWeight(pi){var p=window._appData.periods[pi];if(!p)return null;for(var j=0;j<p.weeks.length;j++){var s=weekStats(p.weeks[j]);if(s.avgWeight!==null)return s.avgWeight;}return null;}
 function getPeriodEndWeight(pi){var p=window._appData.periods[pi];if(!p)return null;var last=null;p.weeks.forEach(function(w){var s=weekStats(w);if(s.avgWeight!==null)last=s.avgWeight;});return last;}
@@ -451,25 +469,57 @@ function buildCharts(){
 
 function renderDash(app){
   var panel=document.createElement('div');panel.className='panel';
-  var startW=getStartingWeight(),lastW=getLastWeekWeight();
-  var totalDiff=(startW!==null&&lastW!==null)?(lastW-startW):null;
-  var stepsInfo=getLastAndPrevSteps();
-  var statsHtml='<div class="dash-section-title">OVERVIEW</div><div class="stat-grid">'+
-    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-calendar-stats" style="font-size:13px"></i>Starting weight</div><div class="stat-card-val">'+(startW!==null?startW.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(startW!==null?'kg':'')+'</span></div><div class="stat-card-sub" style="color:var(--text-tertiary)">'+(startW!==null?'First logged week':'Log weight to begin')+'</div></div>'+
-    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-scale" style="font-size:13px"></i>Last week\'s avg</div><div class="stat-card-val">'+(lastW!==null?lastW.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(lastW!==null?'kg':'')+'</span></div><div class="stat-card-sub">'+(totalDiff!==null?weightDeltaPill(totalDiff)+' <span style="color:var(--text-tertiary)">since start</span>':'<span style="color:var(--text-tertiary)">vs start</span>')+'</div></div>'+
-    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-shoe" style="font-size:13px"></i>Avg steps last week</div><div class="stat-card-val">'+(stepsInfo.last!==null?stepsInfo.last.toLocaleString():'&mdash;')+'<span class="stat-card-unit">'+(stepsInfo.last!==null?'/day':'')+'</span></div><div class="stat-card-sub">'+(stepsInfo.last!==null&&stepsInfo.prev!==null?stepsDeltaPill(stepsInfo.last,stepsInfo.prev)+' <span style="color:var(--text-tertiary)">vs prev</span>':'<span style="color:var(--text-tertiary)">vs prev week</span>')+'</div></div>'+
+  var startW=getStartingWeight();
+  var info=getCurrentAndLastWeekIndices();
+  var allWeeks=info.allWeeks;
+
+  // Current week stats
+  var curStats=info.currentIdx>=0?allWeeks[info.currentIdx].stats:{avgWeight:null,avgSteps:null};
+  // Last FULL week stats
+  var lastStats=info.lastFullIdx>=0?allWeeks[info.lastFullIdx].stats:{avgWeight:null,avgSteps:null};
+  // Weight delta: last full week vs start
+  var totalDiff=(startW!==null&&lastStats.avgWeight!==null)?(lastStats.avgWeight-startW):null;
+  // Steps delta: last full week vs the week before it
+  var prevSteps=null;
+  if(info.lastFullIdx>0){
+    for(var k=info.lastFullIdx-1;k>=0;k--){if(allWeeks[k].stats.avgSteps!==null){prevSteps=allWeeks[k].stats.avgSteps;break;}}
+  }
+
+  // ── Row 1: This week ──
+  var row1='<div class="dash-section-title">THIS WEEK</div><div class="stat-grid" style="margin-bottom:14px">'+
+    '<div class="stat-card highlight"><div class="stat-card-lbl"><i class="ti ti-scale" style="font-size:13px"></i>Avg weight</div>'+
+    '<div class="stat-card-val">'+(curStats.avgWeight!==null?curStats.avgWeight.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(curStats.avgWeight!==null?'kg':'')+'</span></div>'+
+    '<div class="stat-card-sub" style="color:var(--text-tertiary)">'+(curStats.avgWeight!==null?'Current week':'No data yet')+'</div></div>'+
+    '<div class="stat-card highlight"><div class="stat-card-lbl"><i class="ti ti-shoe" style="font-size:13px"></i>Avg steps</div>'+
+    '<div class="stat-card-val">'+(curStats.avgSteps!==null?curStats.avgSteps.toLocaleString():'&mdash;')+'<span class="stat-card-unit">'+(curStats.avgSteps!==null?'/day':'')+'</span></div>'+
+    '<div class="stat-card-sub" style="color:var(--text-tertiary)">'+(curStats.avgSteps!==null?'Current week':'No data yet')+'</div></div>'+
+    '<div class="stat-card highlight"><div class="stat-card-lbl"><i class="ti ti-calendar-stats" style="font-size:13px"></i>Starting weight</div>'+
+    '<div class="stat-card-val">'+(startW!==null?startW.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(startW!==null?'kg':'')+'</span></div>'+
+    '<div class="stat-card-sub" style="color:var(--text-tertiary)">'+(startW!==null?'First logged week':'Log weight to begin')+'</div></div>'+
     '</div>';
-  var chartsHtml='<div class="dash-section-title">TRENDS</div><div class="charts-row">'+
+
+  // ── Row 2: Last full week ──
+  var row2='<div class="dash-section-title">LAST FULL WEEK</div><div class="stat-grid">'+
+    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-scale" style="font-size:13px"></i>Avg weight</div>'+
+    '<div class="stat-card-val">'+(lastStats.avgWeight!==null?lastStats.avgWeight.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(lastStats.avgWeight!==null?'kg':'')+'</span></div>'+
+    '<div class="stat-card-sub">'+(totalDiff!==null?weightDeltaPill(totalDiff)+' <span style="color:var(--text-tertiary)">since start</span>':'<span style="color:var(--text-tertiary)">vs start</span>')+'</div></div>'+
+    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-shoe" style="font-size:13px"></i>Avg steps</div>'+
+    '<div class="stat-card-val">'+(lastStats.avgSteps!==null?lastStats.avgSteps.toLocaleString():'&mdash;')+'<span class="stat-card-unit">'+(lastStats.avgSteps!==null?'/day':'')+'</span></div>'+
+    '<div class="stat-card-sub">'+(lastStats.avgSteps!==null&&prevSteps!==null?stepsDeltaPill(lastStats.avgSteps,prevSteps)+' <span style="color:var(--text-tertiary)">vs prev</span>':'<span style="color:var(--text-tertiary)">vs prev week</span>')+'</div></div>'+
+    '<div class="stat-card" style="background:transparent;box-shadow:none"></div>'+
+    '</div>';
+
+  var chartsHtml='<div class="divider"></div><div class="dash-section-title">TRENDS</div><div class="charts-row">'+
     '<div><div class="chart-block-title"><i class="ti ti-scale" style="font-size:14px;color:var(--text-secondary)"></i>Weight (kg)</div><div class="chart-wrap"><canvas id="dash-chart-weight"></canvas></div></div>'+
     '<div><div class="chart-block-title"><i class="ti ti-shoe" style="font-size:14px;color:var(--text-secondary)"></i>Avg steps / day</div><div class="chart-wrap"><canvas id="dash-chart-steps"></canvas></div></div>'+
     '</div>';
+
   var completed=window._appData.periods.map(function(p,pi){return{p:p,pi:pi}}).filter(function(x){return isPeriodCompleted(x.pi)});
   var periodsHtml='';
   if(completed.length>0){
     periodsHtml='<div class="divider"></div><div class="dash-section-title">CHANGE PER 4-WEEK PERIOD</div><div class="periods-grid">';
     completed.forEach(function(x){
-      var pS=getPeriodStartWeight(x.pi),pE=getPeriodEndWeight(x.pi);
-      var pD=(pS!==null&&pE!==null)?(pE-pS):null;
+      var pS=getPeriodStartWeight(x.pi),pE=getPeriodEndWeight(x.pi),pD=(pS!==null&&pE!==null)?(pE-pS):null;
       var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[x.p.goal]||'badge-maintain';
       var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[x.p.goal]||'Maintain';
       periodsHtml+='<div class="period-stat"><div class="period-stat-label"><span>Period '+(x.pi+1)+'</span><span class="period-stat-badge '+bc+'">'+bl+'</span></div>'+
@@ -481,7 +531,8 @@ function renderDash(app){
   } else {
     periodsHtml='<div class="divider"></div><div class="empty-dash"><i class="ti ti-clock" style="font-size:18px;display:block;margin-bottom:6px"></i>Period breakdowns appear once you have logged data across at least 2 weeks.</div>';
   }
-  panel.innerHTML=statsHtml+chartsHtml+periodsHtml;
+
+  panel.innerHTML=row1+row2+chartsHtml+periodsHtml;
   app.appendChild(panel);
   setTimeout(buildCharts,60);
 }
@@ -551,10 +602,21 @@ function render(){
         var calDiff=cal&&goalCal?cal-goalCal:null,diffStr=calDiff!==null?(calDiff>=0?'+'+calDiff.toLocaleString():calDiff.toLocaleString()):'-';
         var dc=calDiff===null?'var(--text-tertiary)':calDiff>0?'var(--text-danger)':'var(--text-success)';
         var stp=parseInt(d.steps)||0,stpPct=stp&&stepGoal?Math.min((stp/stepGoal)*100,100):0,stpOver=stp>=stepGoal&&stp>0;
+        // Steps bar: same colors as calories — green when on track (under/at goal), red when over
+        // But for steps, hitting the goal is good so: green = at/over goal, grey progress = under
+        // Use same bar-ok / bar-over but inverted: green when reached, orange-red when under goal color
+        // Actually match calories exactly: bar-ok (green) fills up, bar-over (red) if exceeded
+        // For steps: reaching goal = good, so use bar-ok when under/at, bar-over doesn't apply
+        // Simple match to calories colors: under goal = bar-ok (green progress), over goal = still bar-ok (all good)
+        var stpBarClass=stpOver?'bar-ok':'bar-ok'; // always green for steps progress bar
+        // More precisely to match calories: green bar filling toward goal, turns red if they somehow set 0 goal
+        // Calories: green=under goal (good), red=over goal (bad)
+        // Steps: green=progress toward goal (good). No "bad" state for steps.
+        // So just use bar-ok always for steps. When full = reached goal.
         return '<div class="day-row"><span class="day-lbl">'+d.day+'</span>'+
           '<input class="day-inp" type="number" step="0.1" min="0" max="300" placeholder="kg" value="'+d.weight+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="weight">'+
           '<div><input class="day-inp" type="number" step="1" min="0" max="20000" placeholder="kcal" value="'+d.calories+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="calories"><div class="bar-wrap"><div class="bar-fill '+(calOver?'bar-over':'bar-ok')+'" style="width:'+calPct+'%"></div></div></div>'+
-          '<div><input class="day-inp" type="number" step="1" min="0" max="100000" placeholder="steps" value="'+d.steps+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="steps"><div class="bar-wrap"><div class="bar-fill '+(stpOver?'bar-steps-over':'bar-steps-ok')+'" style="width:'+stpPct+'%"></div></div></div>'+
+          '<div><input class="day-inp" type="number" step="1" min="0" max="100000" placeholder="steps" value="'+d.steps+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="steps"><div class="bar-wrap"><div class="bar-fill '+(stpOver?'bar-ok':'bar-over')+'" style="width:'+stpPct+'%"></div></div></div>'+
           '<span class="vs-goal-cell" style="font-size:11px;font-weight:500;color:'+dc+';text-align:right;padding-right:2px">'+diffStr+'</span>'+
           '<button class="clr-btn" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'"><i class="ti ti-x"></i></button></div>';
       }).join('');
@@ -565,12 +627,13 @@ function render(){
         '<span class="mini-stat"><i class="ti ti-flame" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+totalC+'</b>'+(stats.totalCal!==null?' kcal':'')+'</span>'+
         '<span class="mini-stat"><i class="ti ti-shoe" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgSt+'</b>'+(stats.avgSteps!==null?'/d':'')+'</span>'+
         '<i class="ti ti-chevron-down chevron"></i></div></div>'+
-        '<div class="week-body"><div class="col-headers"><div class="col-hdr">Day</div><div class="col-hdr">Weight</div><div class="col-hdr">Calories</div><div class="col-hdr">Steps</div><div class="col-hdr vs-goal-cell">Cal \u0394</div><div></div></div>'+dayRows+'</div>'+
+        '<div class="week-body"><div class="col-headers"><div class="col-hdr">Day</div><div class="col-hdr">Weight</div><div class="col-hdr">Calories</div><div class="col-hdr">Steps</div><div class="col-hdr vs-goal-cell">Cal \u0394</div><div></div></div>'+
+        dayRows+'</div>'+
         '<div class="week-summary">'+
         '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-scale" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg weight</div><div class="sum-val">'+avgW+'<span class="sum-unit">'+(stats.avgWeight!==null?'kg':'')+'</span></div><div class="sum-sub">'+(dHtml||'<span style="color:var(--text-tertiary)">\u2014</span>')+'</div></div>'+
         '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-flame" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Weekly calories</div><div class="sum-val">'+totalC+'<span class="sum-unit">'+(stats.totalCal!==null?'kcal':'')+'</span></div><div class="sum-sub" style="color:'+vsColor+'">'+(calVsStr||'\u2014')+'</div></div>'+
         '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-shoe" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg steps/day</div><div class="sum-val">'+avgSt+'</div><div class="sum-sub">'+(stepsVsGoalStr(stats.avgSteps,stepGoal)||'<span style="color:var(--text-tertiary)">\u2014</span>')+'</div></div>'+
-        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-target" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Goals</div><div class="sum-val" style="font-size:12px;margin-top:2px"><i class="ti ti-flame" style="font-size:11px;color:var(--text-warning)"></i> '+goalCal.toLocaleString()+' kcal</div><div class="sum-sub"><i class="ti ti-shoe" style="font-size:10px;color:#7c3aed"></i> '+stepGoal.toLocaleString()+' steps</div></div>'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-target" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Goals</div><div class="sum-val" style="font-size:12px;margin-top:2px"><i class="ti ti-flame" style="font-size:11px;color:var(--text-warning)"></i> '+goalCal.toLocaleString()+' kcal</div><div class="sum-sub"><i class="ti ti-shoe" style="font-size:10px;color:#639922"></i> '+stepGoal.toLocaleString()+' steps</div></div>'+
         '</div>';
       card.appendChild(sec);
     });
@@ -584,7 +647,6 @@ function render(){
   apw.innerHTML='<button class="add-btn" id="add-period"><i class="ti ti-plus"></i>Add 4-week period</button>';
   app.appendChild(apw);
 
-  // Events
   document.getElementById('toggle-dash').addEventListener('click',function(){data.showDash=!data.showDash;render()});
   document.getElementById('toggle-settings').addEventListener('click',function(){data.showSettings=!data.showSettings;render()});
   document.getElementById('signout-btn').addEventListener('click',function(){if(window._signOut)window._signOut()});
