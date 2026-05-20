@@ -743,7 +743,7 @@ function render(){
 // State for training UI (in-memory, not persisted)
 var _trTab='library';   // 'library' | 'routines' | 'sessions'
 var _trRoutineOpen={};  // {routineId: bool} expanded state
-var _wgerCache={};      // search cache
+
 
 function trData(){
   var d=window._appData;
@@ -783,12 +783,111 @@ function renderTrainingContent(){
   else renderSessions(cont);
 }
 
+// ── BUNDLED EXERCISE DATABASE ──
+// Curated list — no network request needed, works offline, no CORS issues.
+var EXERCISE_DB=[
+  // Chest
+  {name:'Bench Press',muscle:'Chest',equipment:'Barbell'},
+  {name:'Incline Bench Press',muscle:'Chest',equipment:'Barbell'},
+  {name:'Decline Bench Press',muscle:'Chest',equipment:'Barbell'},
+  {name:'Dumbbell Fly',muscle:'Chest',equipment:'Dumbbell'},
+  {name:'Incline Dumbbell Press',muscle:'Chest',equipment:'Dumbbell'},
+  {name:'Cable Fly',muscle:'Chest',equipment:'Cable machine'},
+  {name:'Push-up',muscle:'Chest',equipment:'Bodyweight'},
+  {name:'Chest Dip',muscle:'Chest',equipment:'Bodyweight'},
+  {name:'Pec Deck',muscle:'Chest',equipment:'Machine'},
+  {name:'Landmine Press',muscle:'Chest',equipment:'Barbell'},
+  // Back
+  {name:'Pull-up',muscle:'Back',equipment:'Bodyweight'},
+  {name:'Chin-up',muscle:'Back',equipment:'Bodyweight'},
+  {name:'Barbell Row',muscle:'Back',equipment:'Barbell'},
+  {name:'Pendlay Row',muscle:'Back',equipment:'Barbell'},
+  {name:'Dumbbell Row',muscle:'Back',equipment:'Dumbbell'},
+  {name:'Lat Pulldown',muscle:'Back',equipment:'Cable machine'},
+  {name:'Seated Cable Row',muscle:'Back',equipment:'Cable machine'},
+  {name:'T-Bar Row',muscle:'Back',equipment:'Barbell'},
+  {name:'Deadlift',muscle:'Back',equipment:'Barbell'},
+  {name:'Romanian Deadlift',muscle:'Back',equipment:'Barbell'},
+  {name:'Hyperextension',muscle:'Back',equipment:'Machine'},
+  {name:'Face Pull',muscle:'Back',equipment:'Cable machine'},
+  {name:'Straight-Arm Pulldown',muscle:'Back',equipment:'Cable machine'},
+  // Shoulders
+  {name:'Overhead Press',muscle:'Shoulders',equipment:'Barbell'},
+  {name:'Dumbbell Shoulder Press',muscle:'Shoulders',equipment:'Dumbbell'},
+  {name:'Arnold Press',muscle:'Shoulders',equipment:'Dumbbell'},
+  {name:'Lateral Raise',muscle:'Shoulders',equipment:'Dumbbell'},
+  {name:'Front Raise',muscle:'Shoulders',equipment:'Dumbbell'},
+  {name:'Rear Delt Fly',muscle:'Shoulders',equipment:'Dumbbell'},
+  {name:'Upright Row',muscle:'Shoulders',equipment:'Barbell'},
+  {name:'Cable Lateral Raise',muscle:'Shoulders',equipment:'Cable machine'},
+  {name:'Machine Shoulder Press',muscle:'Shoulders',equipment:'Machine'},
+  // Biceps
+  {name:'Barbell Curl',muscle:'Biceps',equipment:'Barbell'},
+  {name:'Dumbbell Curl',muscle:'Biceps',equipment:'Dumbbell'},
+  {name:'Hammer Curl',muscle:'Biceps',equipment:'Dumbbell'},
+  {name:'Incline Dumbbell Curl',muscle:'Biceps',equipment:'Dumbbell'},
+  {name:'Preacher Curl',muscle:'Biceps',equipment:'Barbell'},
+  {name:'Cable Curl',muscle:'Biceps',equipment:'Cable machine'},
+  {name:'Concentration Curl',muscle:'Biceps',equipment:'Dumbbell'},
+  {name:'Reverse Curl',muscle:'Biceps',equipment:'Barbell'},
+  // Triceps
+  {name:'Close-Grip Bench Press',muscle:'Triceps',equipment:'Barbell'},
+  {name:'Tricep Dip',muscle:'Triceps',equipment:'Bodyweight'},
+  {name:'Skull Crusher',muscle:'Triceps',equipment:'Barbell'},
+  {name:'Tricep Pushdown',muscle:'Triceps',equipment:'Cable machine'},
+  {name:'Overhead Tricep Extension',muscle:'Triceps',equipment:'Dumbbell'},
+  {name:'Rope Pushdown',muscle:'Triceps',equipment:'Cable machine'},
+  {name:'Diamond Push-up',muscle:'Triceps',equipment:'Bodyweight'},
+  {name:'Kickback',muscle:'Triceps',equipment:'Dumbbell'},
+  // Legs
+  {name:'Squat',muscle:'Legs',equipment:'Barbell'},
+  {name:'Front Squat',muscle:'Legs',equipment:'Barbell'},
+  {name:'Goblet Squat',muscle:'Legs',equipment:'Dumbbell'},
+  {name:'Bulgarian Split Squat',muscle:'Legs',equipment:'Dumbbell'},
+  {name:'Leg Press',muscle:'Legs',equipment:'Machine'},
+  {name:'Hack Squat',muscle:'Legs',equipment:'Machine'},
+  {name:'Leg Extension',muscle:'Legs',equipment:'Machine'},
+  {name:'Leg Curl',muscle:'Legs',equipment:'Machine'},
+  {name:'Lunge',muscle:'Legs',equipment:'Dumbbell'},
+  {name:'Walking Lunge',muscle:'Legs',equipment:'Dumbbell'},
+  {name:'Step-up',muscle:'Legs',equipment:'Dumbbell'},
+  {name:'Hip Thrust',muscle:'Legs',equipment:'Barbell'},
+  {name:'Glute Bridge',muscle:'Legs',equipment:'Bodyweight'},
+  {name:'Sumo Deadlift',muscle:'Legs',equipment:'Barbell'},
+  {name:'Calf Raise',muscle:'Legs',equipment:'Machine'},
+  {name:'Seated Calf Raise',muscle:'Legs',equipment:'Machine'},
+  // Core
+  {name:'Plank',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Side Plank',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Crunch',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Sit-up',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Leg Raise',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Cable Crunch',muscle:'Core',equipment:'Cable machine'},
+  {name:'Ab Wheel Rollout',muscle:'Core',equipment:'Other'},
+  {name:'Russian Twist',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Dead Bug',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Hanging Leg Raise',muscle:'Core',equipment:'Bodyweight'},
+  {name:'Decline Sit-up',muscle:'Core',equipment:'Bodyweight'},
+  // Cardio / Full body
+  {name:'Barbell Clean',muscle:'Full Body',equipment:'Barbell'},
+  {name:'Power Clean',muscle:'Full Body',equipment:'Barbell'},
+  {name:'Snatch',muscle:'Full Body',equipment:'Barbell'},
+  {name:'Thruster',muscle:'Full Body',equipment:'Barbell'},
+  {name:'Burpee',muscle:'Full Body',equipment:'Bodyweight'},
+  {name:'Kettlebell Swing',muscle:'Full Body',equipment:'Kettlebell'},
+  {name:'Kettlebell Clean and Press',muscle:'Full Body',equipment:'Kettlebell'},
+  {name:'Farmer\'s Carry',muscle:'Full Body',equipment:'Dumbbell'},
+  {name:'Battle Rope',muscle:'Full Body',equipment:'Other'},
+  {name:'Box Jump',muscle:'Full Body',equipment:'Bodyweight'},
+  {name:'Jump Squat',muscle:'Full Body',equipment:'Bodyweight'},
+  {name:'Mountain Climber',muscle:'Full Body',equipment:'Bodyweight'},
+];
+
 // ── EXERCISE LIBRARY ──
 function renderLibrary(cont){
-  var td=trData();
-  var html='<div class="tr-section-title">Search WGER exercise database</div>'+
+  var html='<div class="tr-section-title">Exercise database</div>'+
     '<div class="tr-search-row">'+
-    '<input class="tr-search-inp" id="tr-ex-search" type="text" placeholder="e.g. bench press, squat…">'+
+    '<input class="tr-search-inp" id="tr-ex-search" type="text" placeholder="e.g. bench press, squat, cable…" autocomplete="off">'+
     '<button class="tr-btn" id="tr-ex-go"><i class="ti ti-search"></i>Search</button>'+
     '</div>'+
     '<div id="tr-search-results"></div>'+
@@ -798,12 +897,63 @@ function renderLibrary(cont){
     '<button class="tr-btn tr-btn-sm" id="tr-add-custom" style="margin-top:4px"><i class="ti ti-plus"></i>Add custom exercise</button>';
   cont.innerHTML=html;
 
-  // Render custom exercises
   renderCustomExercises();
 
-  document.getElementById('tr-ex-go').addEventListener('click',doWgerSearch);
-  document.getElementById('tr-ex-search').addEventListener('keydown',function(e){if(e.key==='Enter')doWgerSearch();});
+  var searchEl=document.getElementById('tr-ex-search');
+  var goBtn=document.getElementById('tr-ex-go');
+
+  function runSearch(){
+    var q=searchEl.value.trim().toLowerCase();
+    var res=document.getElementById('tr-search-results');
+    if(!q){res.innerHTML='';return;}
+    var matches=EXERCISE_DB.filter(function(e){
+      return e.name.toLowerCase().indexOf(q)!==-1||e.muscle.toLowerCase().indexOf(q)!==-1||e.equipment.toLowerCase().indexOf(q)!==-1;
+    });
+    renderSearchResults(matches,res);
+  }
+
+  goBtn.addEventListener('click',runSearch);
+  searchEl.addEventListener('keydown',function(e){if(e.key==='Enter')runSearch();});
+  searchEl.addEventListener('input',runSearch);
   document.getElementById('tr-add-custom').addEventListener('click',showAddCustomModal);
+}
+
+function renderSearchResults(matches,res){
+  if(!matches.length){res.innerHTML='<div class="tr-empty">No exercises found. Try a different term or add a custom exercise below.</div>';return;}
+  var td=trData();
+  var savedNames={};
+  td.exercises.forEach(function(e){savedNames[e.name.toLowerCase()]=true;});
+
+  res.innerHTML='<div class="exercise-list">'+matches.slice(0,25).map(function(ex){
+    var saved=savedNames[ex.name.toLowerCase()];
+    return '<div class="exercise-item">'+
+      '<div class="exercise-item-info">'+
+        '<div class="exercise-item-name">'+esc(ex.name)+'</div>'+
+        '<div class="exercise-item-meta">'+esc(ex.muscle)+' &bull; '+esc(ex.equipment)+'</div>'+
+      '</div>'+
+      (saved
+        ? '<span class="exercise-badge">Saved</span>'
+        : '<button class="tr-btn tr-btn-sm" data-save-name="'+esc(ex.name)+'" data-save-muscle="'+esc(ex.muscle)+'" data-save-equip="'+esc(ex.equipment)+'"><i class="ti ti-plus" style="font-size:11px"></i>Save</button>'
+      )+
+    '</div>';
+  }).join('')+(matches.length>25?'<div style="font-size:11px;color:var(--text-tertiary);padding:6px 0">Showing first 25 results — refine your search to narrow down.</div>':'')+'</div>';
+
+  res.querySelectorAll('[data-save-name]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var ex={
+        id:'ex_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+        name:btn.dataset.saveName,
+        muscle:btn.dataset.saveMuscle,
+        equipment:btn.dataset.saveEquip,
+        custom:false
+      };
+      trData().exercises.push(ex);
+      scheduleSave();
+      // Update saved state in results without re-running full search
+      btn.outerHTML='<span class="exercise-badge">Saved</span>';
+      renderCustomExercises();
+    });
+  });
 }
 
 function renderCustomExercises(){
@@ -827,87 +977,8 @@ function renderCustomExercises(){
       var id=btn.dataset.delEx;
       var td=trData();
       td.exercises=td.exercises.filter(function(e){return e.id!==id;});
-      // Remove from routines too
       td.routines.forEach(function(r){r.exercises=r.exercises.filter(function(re){return re.exId!==id;});});
       scheduleSave();renderCustomExercises();
-    });
-  });
-}
-
-function doWgerSearch(){
-  var q=(document.getElementById('tr-ex-search')||{}).value;
-  if(!q||!q.trim())return;
-  var res=document.getElementById('tr-search-results');
-  if(!res)return;
-  res.innerHTML='<div class="loading-inline"><div class="spinner-sm"></div>Searching…</div>';
-
-  var cacheKey=q.trim().toLowerCase();
-  if(_wgerCache[cacheKey]){renderWgerResults(_wgerCache[cacheKey]);return;}
-
-  // Use exercisetranslation endpoint: supports name__icontains, language=2 (English), status=2 (approved)
-  var url='https://wger.de/api/v2/exercisetranslation/?format=json&language=2&name__icontains='+encodeURIComponent(q.trim())+'&limit=30';
-  fetch(url).then(function(r){
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    return r.json();
-  }).then(function(data){
-    var results=data.results||[];
-    // De-duplicate by exercise base id (each exercise can have multiple translations)
-    var seen={};
-    var items=[];
-    results.forEach(function(t){
-      var baseId=t.exercise;
-      if(seen[baseId])return;
-      seen[baseId]=true;
-      items.push({
-        id:'wger_'+baseId,
-        name:t.name||'Unknown',
-        muscle:'—',      // translation endpoint doesn't include muscle; shown as — until info loaded
-        equipment:'—',
-        custom:false,
-        wgerId:baseId
-      });
-    });
-    _wgerCache[cacheKey]=items;
-    renderWgerResults(items);
-  }).catch(function(err){
-    console.error('WGER search error:',err);
-    if(document.getElementById('tr-search-results'))
-      document.getElementById('tr-search-results').innerHTML='<div class="tr-empty" style="color:var(--text-danger)">Search failed. Check your connection and try again.</div>';
-  });
-}
-
-function renderWgerResults(items){
-  var res=document.getElementById('tr-search-results');
-  if(!res)return;
-  if(!items||!items.length){res.innerHTML='<div class="tr-empty">No results found.</div>';return;}
-  var td=trData();
-  var alreadySaved={};
-  td.exercises.forEach(function(e){if(e.wgerId)alreadySaved[e.wgerId]=true;});
-
-  res.innerHTML='<div class="exercise-list">'+items.slice(0,20).map(function(ex){
-    var saved=alreadySaved[ex.wgerId];
-    return '<div class="exercise-item">'+
-      '<div class="exercise-item-info">'+
-        '<div class="exercise-item-name">'+esc(ex.name)+'</div>'+
-        '<div class="exercise-item-meta">'+esc(ex.muscle)+' &bull; '+esc(ex.equipment)+'</div>'+
-      '</div>'+
-      (saved
-        ? '<span class="exercise-badge">Saved</span>'
-        : '<button class="tr-btn tr-btn-sm" data-save-ex="'+encodeURIComponent(JSON.stringify(ex))+'"><i class="ti ti-plus" style="font-size:11px"></i>Save</button>'
-      )+
-    '</div>';
-  }).join('')+'</div>';
-
-  res.querySelectorAll('[data-save-ex]').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var ex=JSON.parse(decodeURIComponent(btn.dataset.saveEx));
-      ex.id='ex_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-      trData().exercises.push(ex);
-      scheduleSave();
-      // Refresh result list
-      var cacheKey=(document.getElementById('tr-ex-search')||{}).value||'';
-      renderWgerResults(_wgerCache[cacheKey.trim().toLowerCase()]||[]);
-      renderCustomExercises();
     });
   });
 }
