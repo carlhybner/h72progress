@@ -61,13 +61,13 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
   /* ── Header ── */
-  .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; gap: 16px; flex-wrap: wrap; }
-  .app-logo { display: flex; align-items: center; gap: 14px; }
-  .app-logo img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(167,139,250,0.35)); }
-  .app-logo-text { display: flex; flex-direction: column; }
+  .app-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.75rem; gap: 16px; }
+  .app-logo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .app-logo img { width: 216px; height: 216px; object-fit: contain; filter: drop-shadow(0 4px 18px rgba(167,139,250,0.45)); }
+  .app-logo-text { display: flex; flex-direction: column; align-items: center; }
   .app-logo-name { font-size: 30px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; letter-spacing: -0.5px; }
   .app-logo-sub { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.12em; margin-top: 3px; font-weight: 500; }
-  .top-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .top-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; }
   .icon-btn { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); padding: 7px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
   .icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
   .icon-btn.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-p); }
@@ -183,7 +183,7 @@
 
   @media (max-width: 560px) {
     body { padding: 1rem .625rem; }
-    .app-logo img { width: 52px; height: 52px; }
+    .app-logo img { width: 160px; height: 160px; }
     .app-logo-name { font-size: 22px; }
     .col-headers, .day-row { grid-template-columns: 44px 1fr 1fr 1fr 24px; }
     .col-hdr:nth-child(5), .vs-goal-cell { display: none; }
@@ -535,7 +535,7 @@ function render(){
   var app=document.getElementById('app');app.innerHTML='';
 
   var hdr=document.createElement('div');hdr.className='app-header';
-  hdr.innerHTML='<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72" width="72" height="72"><div class="app-logo-text"><div class="app-logo-name">H72</div><div class="app-logo-sub">WEIGHT TRACKER</div></div></div>'+
+  hdr.innerHTML='<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72" width="216" height="216"><div class="app-logo-text"><div class="app-logo-name">H72</div><div class="app-logo-sub">WEIGHT TRACKER</div></div></div>'+
     '<div class="top-btns">'+
     '<button class="icon-btn'+(data.showDash?' active':'')+'" id="toggle-dash"><i class="ti ti-layout-dashboard"></i>Dashboard</button>'+
     '<button class="icon-btn'+(data.showGuide?' active':'')+'" id="toggle-guide"><i class="ti ti-book"></i>Guide</button>'+
