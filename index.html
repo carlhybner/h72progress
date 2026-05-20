@@ -61,13 +61,13 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
   /* ── Header ── */
-  .app-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.75rem; gap: 16px; }
-  .app-logo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-  .app-logo img { width: 216px; height: 216px; object-fit: contain; filter: drop-shadow(0 4px 18px rgba(167,139,250,0.45)); }
-  .app-logo-text { display: flex; flex-direction: column; align-items: center; }
+  .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; gap: 16px; flex-wrap: wrap; }
+  .app-logo { display: flex; align-items: center; gap: 14px; }
+  .app-logo img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(167,139,250,0.35)); }
+  .app-logo-text { display: flex; flex-direction: column; }
   .app-logo-name { font-size: 30px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; letter-spacing: -0.5px; }
   .app-logo-sub { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.12em; margin-top: 3px; font-weight: 500; }
-  .top-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; }
+  .top-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .icon-btn { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); padding: 7px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
   .icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
   .icon-btn.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-p); }
@@ -183,12 +183,80 @@
 
   @media (max-width: 560px) {
     body { padding: 1rem .625rem; }
-    .app-logo img { width: 160px; height: 160px; }
+    .app-logo img { width: 52px; height: 52px; }
     .app-logo-name { font-size: 22px; }
     .col-headers, .day-row { grid-template-columns: 44px 1fr 1fr 1fr 24px; }
     .col-hdr:nth-child(5), .vs-goal-cell { display: none; }
     .period-header { flex-direction: column; align-items: flex-start; }
     .period-goals-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Training module ── */
+  .training-tabs { display: flex; gap: 6px; margin-bottom: 1rem; border-bottom: 0.5px solid var(--border-t); padding-bottom: 10px; flex-wrap: wrap; }
+  .training-tab { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); padding: 6px 14px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; font-family: inherit; cursor: pointer; }
+  .training-tab:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .training-tab.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-p); }
+  .tr-section-title { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.07em; margin-bottom: 8px; text-transform: uppercase; }
+  .tr-search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tr-search-inp { flex: 1; height: 36px; padding: 0 10px; font-size: 13px; border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; font-family: inherit; }
+  .tr-search-inp:focus { border-color: var(--border-p); background: var(--bg-primary); }
+  .tr-btn { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); padding: 0 14px; height: 36px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .tr-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .tr-btn-primary { background: linear-gradient(90deg,#60c8f5,#a78bfa); color: #fff; border-color: transparent; }
+  .tr-btn-primary:hover { opacity: 0.9; }
+  .tr-btn-sm { height: 28px; padding: 0 10px; font-size: 11px; }
+  .tr-btn-danger { border-color: var(--text-danger); color: var(--text-danger); }
+  .tr-btn-danger:hover { background: var(--bg-danger); }
+  .exercise-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; margin-bottom: 12px; }
+  .exercise-item { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .exercise-item-info { flex: 1; min-width: 0; }
+  .exercise-item-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .exercise-item-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .exercise-badge { font-size: 10px; padding: 1px 7px; border-radius: 20px; font-weight: 500; background: var(--bg-info); color: var(--text-info); display: inline-block; }
+  .exercise-badge.custom { background: var(--bg-success); color: var(--text-success); }
+  .tr-empty { font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 1.5rem 0; }
+  .tr-divider { height: 0.5px; background: var(--border-t); margin: 14px 0; }
+  .routine-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .routine-card { background: var(--bg-secondary); border-radius: var(--radius-md); overflow: hidden; }
+  .routine-header { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; user-select: none; }
+  .routine-title { font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+  .routine-body { padding: 8px 12px 10px; border-top: 0.5px solid var(--border-t); display: flex; flex-direction: column; gap: 6px; }
+  .routine-ex-row { display: grid; grid-template-columns: 1fr 60px 60px 70px 28px; gap: 6px; align-items: center; }
+  .routine-ex-name { font-size: 12px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .routine-ex-inp { height: 26px; padding: 0 6px; font-size: 12px; border: 0.5px solid var(--border-t); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); outline: none; width: 100%; font-family: inherit; text-align: center; }
+  .routine-ex-inp:focus { border-color: var(--border-p); }
+  .routine-col-hdr { font-size: 10px; color: var(--text-tertiary); letter-spacing: .04em; text-align: center; }
+  .session-list { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; }
+  .session-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 10px 12px; }
+  .session-date { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .session-routine-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .session-ex-rows { display: flex; flex-direction: column; gap: 3px; }
+  .session-ex-row { font-size: 12px; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 8px; }
+  .session-note { font-size: 11px; color: var(--text-tertiary); font-style: italic; margin-top: 6px; border-top: 0.5px solid var(--border-t); padding-top: 6px; }
+  .session-log-form { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 12px; }
+  .session-log-ex { display: grid; grid-template-columns: 1fr 60px 60px 70px; gap: 6px; align-items: center; margin-bottom: 5px; }
+  .tr-textarea { width: 100%; padding: 7px 10px; font-size: 13px; border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); outline: none; font-family: inherit; resize: vertical; min-height: 56px; }
+  .tr-textarea:focus { border-color: var(--border-p); }
+  .tr-select { height: 36px; padding: 0 10px; font-size: 13px; border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; font-family: inherit; width: 100%; margin-bottom: 10px; }
+  .tr-select:focus { border-color: var(--border-p); background: var(--bg-primary); }
+  .prog-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .prog-table th { font-size: 10px; color: var(--text-tertiary); font-weight: 500; text-align: left; padding: 3px 6px; border-bottom: 0.5px solid var(--border-t); }
+  .prog-table td { padding: 4px 6px; border-bottom: 0.5px solid var(--border-t); color: var(--text-secondary); }
+  .prog-table tr:last-child td { border-bottom: none; }
+  .prog-table td:first-child { color: var(--text-primary); font-weight: 500; }
+  .tr-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .tr-modal { background: var(--bg-primary); border: 0.5px solid var(--border-s); border-radius: var(--radius-lg); padding: 1.25rem; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+  .tr-modal-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 7px; }
+  .tr-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+  .tr-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+  .tr-inp { height: 36px; padding: 0 10px; font-size: 13px; border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; width: 100%; font-family: inherit; }
+  .tr-inp:focus { border-color: var(--border-p); background: var(--bg-primary); }
+  .tr-modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  .loading-inline { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px; padding: 6px 0; }
+  .spinner-sm { width: 14px; height: 14px; border: 2px solid var(--border-t); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @media (max-width: 480px) {
+    .routine-ex-row { grid-template-columns: 1fr 50px 50px 60px 24px; }
+    .session-log-ex { grid-template-columns: 1fr 50px 50px 60px; }
   }
 </style>
 </head>
@@ -281,9 +349,11 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('main-app').style.display='none';
     const remote=await window._loadFromFirebase(user.uid);
     if(remote){window._appData=remote;}
-    else{const t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);m.setDate(t.getDate()-dow);window._appData={name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,showGuide:false,periods:[makePeriod()]};}
+    else{const t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);m.setDate(t.getDate()-dow);window._appData={name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,showGuide:false,showTrain:false,periods:[makePeriod()]};}
     window._appData.periods.forEach(function(p){if(!p.stepGoal)p.stepGoal=8000;});
     if(window._appData.showGuide===undefined)window._appData.showGuide=false;
+    if(window._appData.showTrain===undefined)window._appData.showTrain=false;
+    if(!window._appData.training)window._appData.training={exercises:[],routines:[],sessions:[]};
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     render();
@@ -535,10 +605,11 @@ function render(){
   var app=document.getElementById('app');app.innerHTML='';
 
   var hdr=document.createElement('div');hdr.className='app-header';
-  hdr.innerHTML='<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72" width="216" height="216"><div class="app-logo-text"><div class="app-logo-name">H72</div><div class="app-logo-sub">WEIGHT TRACKER</div></div></div>'+
+  hdr.innerHTML='<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72" width="72" height="72"><div class="app-logo-text"><div class="app-logo-name">H72</div><div class="app-logo-sub">WEIGHT TRACKER</div></div></div>'+
     '<div class="top-btns">'+
     '<button class="icon-btn'+(data.showDash?' active':'')+'" id="toggle-dash"><i class="ti ti-layout-dashboard"></i>Dashboard</button>'+
     '<button class="icon-btn'+(data.showGuide?' active':'')+'" id="toggle-guide"><i class="ti ti-book"></i>Guide</button>'+
+    '<button class="icon-btn'+(data.showTrain?' active':'')+'" id="toggle-train"><i class="ti ti-barbell"></i>Training</button>'+
     '<button class="icon-btn'+(data.showSettings?' active':'')+'" id="toggle-settings"><i class="ti ti-settings"></i>Settings</button>'+
     '<span id="sync-dot" class="sync-dot" title="Saved"></span>'+
     '<button class="signout-btn" id="signout-btn" title="Sign out"><i class="ti ti-logout"></i></button>'+
@@ -556,6 +627,7 @@ function render(){
 
   if(data.showDash)renderDash(app);
   if(data.showGuide)renderGuide(app);
+  if(data.showTrain)renderTraining(app);
 
   data.periods.forEach(function(period,pi){
     var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[period.goal]||'badge-maintain';
@@ -631,6 +703,7 @@ function render(){
 
   document.getElementById('toggle-dash').addEventListener('click',function(){data.showDash=!data.showDash;render()});
   document.getElementById('toggle-guide').addEventListener('click',function(){data.showGuide=!data.showGuide;render()});
+  document.getElementById('toggle-train').addEventListener('click',function(){data.showTrain=!data.showTrain;render()});
   document.getElementById('toggle-settings').addEventListener('click',function(){data.showSettings=!data.showSettings;render()});
   document.getElementById('signout-btn').addEventListener('click',function(){if(window._signOut)window._signOut()});
   var ss=document.getElementById('save-settings');
@@ -661,6 +734,425 @@ function render(){
   });
   var ap=document.getElementById('add-period');
   if(ap)ap.addEventListener('click',function(){data.periods.push(makePeriod());scheduleSave();render()});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TRAINING MODULE
+   ═══════════════════════════════════════════════════════════ */
+
+// State for training UI (in-memory, not persisted)
+var _trTab='library';   // 'library' | 'routines' | 'sessions'
+var _trRoutineOpen={};  // {routineId: bool} expanded state
+var _wgerCache={};      // search cache
+
+function trData(){
+  var d=window._appData;
+  if(!d.training)d.training={exercises:[],routines:[],sessions:[]};
+  if(!d.training.exercises)d.training.exercises=[];
+  if(!d.training.routines)d.training.routines=[];
+  if(!d.training.sessions)d.training.sessions=[];
+  return d.training;
+}
+
+function renderTraining(app){
+  var panel=document.createElement('div');panel.className='panel';panel.id='training-panel';
+
+  var headerHtml='<div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:1rem;display:flex;align-items:center;gap:8px"><i class="ti ti-barbell" style="font-size:17px;color:var(--text-secondary)"></i>Training</div>';
+
+  var tabsHtml='<div class="training-tabs">'+
+    '<button class="training-tab'+(_trTab==='library'?' active':'')+'" data-tr-tab="library"><i class="ti ti-search"></i>Exercise Library</button>'+
+    '<button class="training-tab'+(_trTab==='routines'?' active':'')+'" data-tr-tab="routines"><i class="ti ti-list-check"></i>Routine Builder</button>'+
+    '<button class="training-tab'+(_trTab==='sessions'?' active':'')+'" data-tr-tab="sessions"><i class="ti ti-calendar-event"></i>Session Log</button>'+
+    '</div>';
+
+  panel.innerHTML=headerHtml+tabsHtml+'<div id="tr-content"></div>';
+  app.appendChild(panel);
+
+  panel.querySelectorAll('[data-tr-tab]').forEach(function(btn){
+    btn.addEventListener('click',function(){_trTab=btn.dataset.trTab;renderTrainingContent();});
+  });
+
+  renderTrainingContent();
+}
+
+function renderTrainingContent(){
+  var cont=document.getElementById('tr-content');
+  if(!cont)return;
+  if(_trTab==='library')renderLibrary(cont);
+  else if(_trTab==='routines')renderRoutines(cont);
+  else renderSessions(cont);
+}
+
+// ── EXERCISE LIBRARY ──
+function renderLibrary(cont){
+  var td=trData();
+  var html='<div class="tr-section-title">Search WGER exercise database</div>'+
+    '<div class="tr-search-row">'+
+    '<input class="tr-search-inp" id="tr-ex-search" type="text" placeholder="e.g. bench press, squat…">'+
+    '<button class="tr-btn" id="tr-ex-go"><i class="ti ti-search"></i>Search</button>'+
+    '</div>'+
+    '<div id="tr-search-results"></div>'+
+    '<div class="tr-divider"></div>'+
+    '<div class="tr-section-title">Custom exercises <span style="font-size:10px;color:var(--text-tertiary);text-transform:none;letter-spacing:0">(saved to your account)</span></div>'+
+    '<div id="tr-custom-list"></div>'+
+    '<button class="tr-btn tr-btn-sm" id="tr-add-custom" style="margin-top:4px"><i class="ti ti-plus"></i>Add custom exercise</button>';
+  cont.innerHTML=html;
+
+  // Render custom exercises
+  renderCustomExercises();
+
+  document.getElementById('tr-ex-go').addEventListener('click',doWgerSearch);
+  document.getElementById('tr-ex-search').addEventListener('keydown',function(e){if(e.key==='Enter')doWgerSearch();});
+  document.getElementById('tr-add-custom').addEventListener('click',showAddCustomModal);
+}
+
+function renderCustomExercises(){
+  var td=trData();
+  var list=document.getElementById('tr-custom-list');
+  if(!list)return;
+  var customs=td.exercises.filter(function(e){return e.custom;});
+  if(!customs.length){list.innerHTML='<div class="tr-empty" style="padding:.75rem 0">No custom exercises yet.</div>';return;}
+  list.innerHTML=customs.map(function(ex){
+    return '<div class="exercise-item">'+
+      '<div class="exercise-item-info">'+
+        '<div class="exercise-item-name">'+esc(ex.name)+'</div>'+
+        '<div class="exercise-item-meta">'+esc(ex.muscle||'—')+' &bull; '+esc(ex.equipment||'—')+'</div>'+
+      '</div>'+
+      '<span class="exercise-badge custom">Custom</span>'+
+      '<button class="tr-btn tr-btn-sm tr-btn-danger" data-del-ex="'+ex.id+'"><i class="ti ti-trash" style="font-size:11px"></i></button>'+
+    '</div>';
+  }).join('');
+  list.querySelectorAll('[data-del-ex]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var id=btn.dataset.delEx;
+      var td=trData();
+      td.exercises=td.exercises.filter(function(e){return e.id!==id;});
+      // Remove from routines too
+      td.routines.forEach(function(r){r.exercises=r.exercises.filter(function(re){return re.exId!==id;});});
+      scheduleSave();renderCustomExercises();
+    });
+  });
+}
+
+function doWgerSearch(){
+  var q=(document.getElementById('tr-ex-search')||{}).value;
+  if(!q||!q.trim())return;
+  var res=document.getElementById('tr-search-results');
+  if(!res)return;
+  res.innerHTML='<div class="loading-inline"><div class="spinner-sm"></div>Searching…</div>';
+
+  var cacheKey=q.trim().toLowerCase();
+  if(_wgerCache[cacheKey]){renderWgerResults(_wgerCache[cacheKey]);return;}
+
+  var url='https://wger.de/api/v2/exercise/search/?term='+encodeURIComponent(q)+'&language=english&format=json';
+  fetch(url).then(function(r){return r.json();}).then(function(data){
+    // wger returns {suggestions:[{data:{id,name,category,muscles,equipment}},...]}
+    var items=(data.suggestions||[]).map(function(s){
+      var d=s.data||{};
+      return {
+        id:'wger_'+d.id,
+        name:d.name||s.value||'Unknown',
+        muscle:(d.category&&d.category.name)||'—',
+        equipment:(d.equipment&&d.equipment.length?d.equipment.map(function(e){return e.name;}).join(', '):'—'),
+        custom:false,
+        wgerId:d.id
+      };
+    });
+    _wgerCache[cacheKey]=items;
+    renderWgerResults(items);
+  }).catch(function(){
+    if(document.getElementById('tr-search-results'))
+      document.getElementById('tr-search-results').innerHTML='<div class="tr-empty" style="color:var(--text-danger)">Search failed. Check your connection.</div>';
+  });
+}
+
+function renderWgerResults(items){
+  var res=document.getElementById('tr-search-results');
+  if(!res)return;
+  if(!items||!items.length){res.innerHTML='<div class="tr-empty">No results found.</div>';return;}
+  var td=trData();
+  var alreadySaved={};
+  td.exercises.forEach(function(e){if(e.wgerId)alreadySaved[e.wgerId]=true;});
+
+  res.innerHTML='<div class="exercise-list">'+items.slice(0,20).map(function(ex){
+    var saved=alreadySaved[ex.wgerId];
+    return '<div class="exercise-item">'+
+      '<div class="exercise-item-info">'+
+        '<div class="exercise-item-name">'+esc(ex.name)+'</div>'+
+        '<div class="exercise-item-meta">'+esc(ex.muscle)+' &bull; '+esc(ex.equipment)+'</div>'+
+      '</div>'+
+      (saved
+        ? '<span class="exercise-badge">Saved</span>'
+        : '<button class="tr-btn tr-btn-sm" data-save-ex="'+encodeURIComponent(JSON.stringify(ex))+'"><i class="ti ti-plus" style="font-size:11px"></i>Save</button>'
+      )+
+    '</div>';
+  }).join('')+'</div>';
+
+  res.querySelectorAll('[data-save-ex]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var ex=JSON.parse(decodeURIComponent(btn.dataset.saveEx));
+      ex.id='ex_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+      trData().exercises.push(ex);
+      scheduleSave();
+      // Refresh result list
+      var cacheKey=(document.getElementById('tr-ex-search')||{}).value||'';
+      renderWgerResults(_wgerCache[cacheKey.trim().toLowerCase()]||[]);
+      renderCustomExercises();
+    });
+  });
+}
+
+function showAddCustomModal(){
+  var overlay=document.createElement('div');overlay.className='tr-modal-overlay';
+  overlay.innerHTML='<div class="tr-modal">'+
+    '<div class="tr-modal-title"><i class="ti ti-dumbbell"></i>Add custom exercise</div>'+
+    '<div class="tr-field"><label class="tr-label">Exercise name *</label><input class="tr-inp" id="cm-name" placeholder="e.g. Cable fly"></div>'+
+    '<div class="tr-field"><label class="tr-label">Muscle group</label><input class="tr-inp" id="cm-muscle" placeholder="e.g. Chest"></div>'+
+    '<div class="tr-field"><label class="tr-label">Equipment</label><input class="tr-inp" id="cm-equip" placeholder="e.g. Cable machine"></div>'+
+    '<div class="tr-modal-actions">'+
+    '<button class="tr-btn" id="cm-cancel">Cancel</button>'+
+    '<button class="tr-btn tr-btn-primary" id="cm-save">Save</button>'+
+    '</div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cm-cancel').addEventListener('click',function(){document.body.removeChild(overlay);});
+  overlay.querySelector('#cm-save').addEventListener('click',function(){
+    var name=(overlay.querySelector('#cm-name').value||'').trim();
+    if(!name)return;
+    var ex={id:'ex_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:name,muscle:(overlay.querySelector('#cm-muscle').value||'').trim()||'—',equipment:(overlay.querySelector('#cm-equip').value||'').trim()||'—',custom:true};
+    trData().exercises.push(ex);scheduleSave();document.body.removeChild(overlay);renderCustomExercises();
+  });
+}
+
+// ── ROUTINE BUILDER ──
+function renderRoutines(cont){
+  var td=trData();
+  var html='<div class="tr-section-title">Your routines</div>'+
+    '<div id="tr-routine-list" class="routine-list"></div>'+
+    '<button class="tr-btn" id="tr-add-routine"><i class="ti ti-plus"></i>New routine</button>';
+  cont.innerHTML=html;
+  renderRoutineList();
+  document.getElementById('tr-add-routine').addEventListener('click',showAddRoutineModal);
+}
+
+function renderRoutineList(){
+  var td=trData();
+  var listEl=document.getElementById('tr-routine-list');
+  if(!listEl)return;
+  if(!td.routines.length){listEl.innerHTML='<div class="tr-empty">No routines yet. Create one to get started.</div>';return;}
+  listEl.innerHTML='';
+  td.routines.forEach(function(routine,ri){
+    var open=_trRoutineOpen[routine.id];
+    var card=document.createElement('div');card.className='routine-card';
+    var hdrHtml='<div class="routine-header" data-rcard="'+routine.id+'" style="background:var(--bg-tertiary)">'+
+      '<div class="routine-title"><i class="ti ti-list-check" style="font-size:14px;color:var(--text-secondary)"></i>'+esc(routine.name)+'<span style="font-size:11px;color:var(--text-tertiary);font-weight:400">('+routine.exercises.length+' exercises)</span></div>'+
+      '<div style="display:flex;gap:6px">'+
+      '<button class="tr-btn tr-btn-sm" data-add-ex-to="'+ri+'"><i class="ti ti-plus" style="font-size:11px"></i>Add exercise</button>'+
+      '<button class="tr-btn tr-btn-sm tr-btn-danger" data-del-routine="'+ri+'"><i class="ti ti-trash" style="font-size:11px"></i></button>'+
+      '<i class="ti ti-chevron-'+(open?'up':'down')+' chevron" style="font-size:13px;color:var(--text-tertiary);margin-left:4px;align-self:center"></i>'+
+      '</div></div>';
+
+    var bodyHtml='';
+    if(open){
+      var hdrs='<div class="routine-ex-row" style="margin-bottom:4px">'+
+        '<div class="routine-col-hdr">Exercise</div>'+
+        '<div class="routine-col-hdr">Sets</div>'+
+        '<div class="routine-col-hdr">Reps</div>'+
+        '<div class="routine-col-hdr">Weight</div>'+
+        '<div></div></div>';
+      var rows=routine.exercises.map(function(re,rei){
+        return '<div class="routine-ex-row" data-rei="'+rei+'" data-ri="'+ri+'">'+
+          '<div class="routine-ex-name" title="'+esc(re.name)+'">'+esc(re.name)+'</div>'+
+          '<input class="routine-ex-inp" type="number" min="1" max="99" placeholder="3" value="'+esc(re.sets||'')+'" data-ri="'+ri+'" data-rei="'+rei+'" data-f="sets">'+
+          '<input class="routine-ex-inp" type="number" min="1" max="999" placeholder="10" value="'+esc(re.reps||'')+'" data-ri="'+ri+'" data-rei="'+rei+'" data-f="reps">'+
+          '<input class="routine-ex-inp" type="number" min="0" max="9999" step="0.5" placeholder="kg" value="'+esc(re.weight||'')+'" data-ri="'+ri+'" data-rei="'+rei+'" data-f="weight">'+
+          '<button class="tr-btn tr-btn-sm tr-btn-danger" style="padding:0;width:28px;height:26px;justify-content:center" data-del-re="'+rei+'" data-ri="'+ri+'"><i class="ti ti-x" style="font-size:10px"></i></button>'+
+          '</div>';
+      }).join('');
+      bodyHtml='<div class="routine-body">'+hdrs+rows+
+        (routine.exercises.length===0?'<div class="tr-empty" style="padding:.5rem 0">No exercises yet.</div>':'')+
+        '</div>';
+    }
+    card.innerHTML=hdrHtml+bodyHtml;
+    listEl.appendChild(card);
+
+    card.querySelector('[data-rcard]').addEventListener('click',function(e){
+      if(e.target.closest('button')||e.target.closest('input'))return;
+      _trRoutineOpen[routine.id]=!_trRoutineOpen[routine.id];renderRoutineList();
+    });
+    card.querySelector('[data-add-ex-to]').addEventListener('click',function(){showAddExToRoutine(ri);});
+    card.querySelector('[data-del-routine]').addEventListener('click',function(){
+      if(!confirm('Delete "'+routine.name+'"?'))return;
+      trData().routines.splice(ri,1);scheduleSave();renderRoutineList();
+    });
+    if(open){
+      card.querySelectorAll('[data-del-re]').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var ri2=parseInt(btn.dataset.ri),rei=parseInt(btn.dataset.delRe);
+          trData().routines[ri2].exercises.splice(rei,1);scheduleSave();renderRoutineList();
+        });
+      });
+      card.querySelectorAll('.routine-ex-inp').forEach(function(inp){
+        inp.addEventListener('change',function(){
+          var ri2=parseInt(inp.dataset.ri),rei=parseInt(inp.dataset.rei),f=inp.dataset.f;
+          trData().routines[ri2].exercises[rei][f]=inp.value;scheduleSave();
+        });
+      });
+    }
+  });
+}
+
+function showAddRoutineModal(){
+  var overlay=document.createElement('div');overlay.className='tr-modal-overlay';
+  overlay.innerHTML='<div class="tr-modal">'+
+    '<div class="tr-modal-title"><i class="ti ti-list-check"></i>New routine</div>'+
+    '<div class="tr-field"><label class="tr-label">Routine name *</label><input class="tr-inp" id="rn-name" placeholder="e.g. Push Day"></div>'+
+    '<div class="tr-modal-actions">'+
+    '<button class="tr-btn" id="rn-cancel">Cancel</button>'+
+    '<button class="tr-btn tr-btn-primary" id="rn-save">Create</button>'+
+    '</div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('#rn-cancel').addEventListener('click',function(){document.body.removeChild(overlay);});
+  overlay.querySelector('#rn-save').addEventListener('click',function(){
+    var name=(overlay.querySelector('#rn-name').value||'').trim();if(!name)return;
+    var r={id:'r_'+Date.now(),name:name,exercises:[]};
+    trData().routines.push(r);_trRoutineOpen[r.id]=true;scheduleSave();document.body.removeChild(overlay);renderRoutineList();
+  });
+}
+
+function showAddExToRoutine(ri){
+  var td=trData();
+  var all=td.exercises;
+  if(!all.length){alert('No exercises saved yet. Search and save exercises in the Exercise Library first.');return;}
+  var overlay=document.createElement('div');overlay.className='tr-modal-overlay';
+  var opts=all.map(function(ex){return '<option value="'+ex.id+'">'+esc(ex.name)+(ex.custom?' (custom)':'')+'</option>';}).join('');
+  overlay.innerHTML='<div class="tr-modal">'+
+    '<div class="tr-modal-title"><i class="ti ti-plus"></i>Add exercise to routine</div>'+
+    '<div class="tr-field"><label class="tr-label">Exercise</label><select class="tr-inp" id="ae-ex">'+opts+'</select></div>'+
+    '<div class="tr-field" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+    '<div><label class="tr-label">Sets</label><input class="tr-inp" id="ae-sets" type="number" min="1" max="99" placeholder="3"></div>'+
+    '<div><label class="tr-label">Reps</label><input class="tr-inp" id="ae-reps" type="number" min="1" max="999" placeholder="10"></div>'+
+    '<div><label class="tr-label">Weight (kg)</label><input class="tr-inp" id="ae-weight" type="number" min="0" step="0.5" placeholder="0"></div>'+
+    '</div>'+
+    '<div class="tr-modal-actions">'+
+    '<button class="tr-btn" id="ae-cancel">Cancel</button>'+
+    '<button class="tr-btn tr-btn-primary" id="ae-save">Add</button>'+
+    '</div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('#ae-cancel').addEventListener('click',function(){document.body.removeChild(overlay);});
+  overlay.querySelector('#ae-save').addEventListener('click',function(){
+    var exId=overlay.querySelector('#ae-ex').value;
+    var ex=td.exercises.find(function(e){return e.id===exId;});
+    if(!ex)return;
+    var re={exId:exId,name:ex.name,sets:overlay.querySelector('#ae-sets').value,reps:overlay.querySelector('#ae-reps').value,weight:overlay.querySelector('#ae-weight').value};
+    trData().routines[ri].exercises.push(re);scheduleSave();document.body.removeChild(overlay);renderRoutineList();
+  });
+}
+
+// ── SESSION LOG ──
+function renderSessions(cont){
+  var td=trData();
+  var html='<div class="tr-section-title">Log a workout</div>';
+
+  if(!td.routines.length){
+    html+='<div class="tr-empty">Build a routine first in the Routine Builder tab, then log sessions here.</div>';
+    cont.innerHTML=html;return;
+  }
+
+  // Routine selector
+  var routineOpts=td.routines.map(function(r,i){return '<option value="'+i+'">'+esc(r.name)+'</option>';}).join('');
+  html+='<select class="tr-select" id="sl-routine">'+routineOpts+'</select>';
+  html+='<div id="sl-ex-form" class="session-log-form"></div>';
+  html+='<div class="tr-field"><label class="tr-label">Note (optional)</label><textarea class="tr-textarea" id="sl-note" placeholder="How did it go?"></textarea></div>';
+  html+='<button class="tr-btn tr-btn-primary" id="sl-log" style="margin-bottom:16px"><i class="ti ti-check"></i>Log session</button>';
+  html+='<div class="tr-divider"></div>'+
+    '<div class="tr-section-title">Session history</div>'+
+    '<div id="tr-session-list" class="session-list"></div>';
+
+  cont.innerHTML=html;
+
+  // Build exercise form for selected routine
+  function buildExForm(){
+    var ri=parseInt(document.getElementById('sl-routine').value)||0;
+    var routine=td.routines[ri];
+    var form=document.getElementById('sl-ex-form');
+    if(!routine||!routine.exercises.length){form.innerHTML='<div class="tr-empty" style="padding:.5rem 0">This routine has no exercises.</div>';return;}
+    var hdrs='<div class="session-log-ex" style="margin-bottom:3px">'+
+      '<div style="font-size:10px;color:var(--text-tertiary)">Exercise</div>'+
+      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Sets</div>'+
+      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Reps</div>'+
+      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Weight</div>'+
+      '</div>';
+    var rows=routine.exercises.map(function(re,rei){
+      return '<div class="session-log-ex">'+
+        '<div style="font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(re.name)+'</div>'+
+        '<input class="routine-ex-inp" type="number" min="1" max="99" placeholder="'+esc(re.sets||'3')+'" data-sl-rei="'+rei+'" data-sl-f="sets" style="text-align:center">'+
+        '<input class="routine-ex-inp" type="number" min="1" max="999" placeholder="'+esc(re.reps||'10')+'" data-sl-rei="'+rei+'" data-sl-f="reps" style="text-align:center">'+
+        '<input class="routine-ex-inp" type="number" min="0" max="9999" step="0.5" placeholder="'+esc(re.weight||'0')+'" data-sl-rei="'+rei+'" data-sl-f="weight" style="text-align:center">'+
+        '</div>';
+    }).join('');
+    form.innerHTML=hdrs+rows;
+  }
+  buildExForm();
+  document.getElementById('sl-routine').addEventListener('change',buildExForm);
+
+  // Log session
+  document.getElementById('sl-log').addEventListener('click',function(){
+    var ri=parseInt(document.getElementById('sl-routine').value)||0;
+    var routine=td.routines[ri];
+    if(!routine)return;
+    var exercises=routine.exercises.map(function(re,rei){
+      var sets=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="sets"]');
+      var reps=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="reps"]');
+      var weight=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="weight"]');
+      return {exId:re.exId,name:re.name,sets:(sets&&sets.value)||re.sets||'',reps:(reps&&reps.value)||re.reps||'',weight:(weight&&weight.value)||re.weight||''};
+    });
+    var note=(document.getElementById('sl-note').value||'').trim();
+    var session={id:'s_'+Date.now(),routineId:routine.id,routineName:routine.name,date:new Date().toISOString(),exercises:exercises,note:note};
+    td.sessions.unshift(session);scheduleSave();
+    // Reset form
+    document.getElementById('sl-note').value='';
+    buildExForm();
+    renderSessionList();
+  });
+
+  renderSessionList();
+}
+
+function renderSessionList(){
+  var td=trData();
+  var listEl=document.getElementById('tr-session-list');
+  if(!listEl)return;
+  if(!td.sessions.length){listEl.innerHTML='<div class="tr-empty">No sessions logged yet.</div>';return;}
+
+  // Group by routine for progression view; show flat list with progression hints
+  listEl.innerHTML=td.sessions.slice(0,30).map(function(s){
+    var dateStr=new Date(s.date).toLocaleDateString('en-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    var exRows=s.exercises.map(function(e){
+      // Find previous best for this exercise
+      var prev=null;
+      for(var i=1;i<td.sessions.length;i++){
+        var ps=td.sessions[i];
+        var pe=ps.exercises&&ps.exercises.find(function(pe){return pe.exId===e.exId;});
+        if(pe&&pe.weight&&parseFloat(pe.weight)>0){prev=pe;break;}
+      }
+      var trend='';
+      if(prev&&e.weight&&parseFloat(e.weight)>parseFloat(prev.weight)){trend='<span style="color:var(--text-success);font-size:10px"> ▲ +'+((parseFloat(e.weight)-parseFloat(prev.weight)).toFixed(1))+'kg</span>';}
+      else if(prev&&e.weight&&parseFloat(e.weight)<parseFloat(prev.weight)){trend='<span style="color:var(--text-danger);font-size:10px"> ▼</span>';}
+      return '<div class="session-ex-row"><span style="color:var(--text-primary)">'+esc(e.name)+'</span><span>'+
+        (e.sets?e.sets+'×':'')+''+(e.reps?e.reps+' reps':'')+''+(e.weight&&parseFloat(e.weight)>0?' @ '+parseFloat(e.weight)+'kg':'')+trend+'</span></div>';
+    }).join('');
+    return '<div class="session-card">'+
+      '<div class="session-date">'+dateStr+'</div>'+
+      '<div class="session-routine-name"><i class="ti ti-barbell" style="font-size:13px;color:var(--text-secondary)"></i>'+esc(s.routineName)+'</div>'+
+      '<div class="session-ex-rows">'+exRows+'</div>'+
+      (s.note?'<div class="session-note">'+esc(s.note)+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+function esc(str){
+  if(str===undefined||str===null)return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>
