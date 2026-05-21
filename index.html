@@ -830,7 +830,7 @@ function render(){
    ═══════════════════════════════════════════════════════════ */
 
 // State for training UI (in-memory, not persisted)
-var _trTab='library';   // 'library' | 'routines' | 'sessions'
+var _trTab='progress';   // 'progress' | 'library' | 'routines' | 'sessions'
 var _trProgramOpen={};  // {programId: bool}
 var _trSessionOpen={};  // {sessionId: bool}
 
@@ -850,6 +850,7 @@ function renderTraining(app){
   var headerHtml='<div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:1rem;display:flex;align-items:center;gap:8px"><i class="ti ti-barbell" style="font-size:17px;color:var(--text-secondary)"></i>Training</div>';
 
   var tabsHtml='<div class="training-tabs">'+
+    '<button class="training-tab'+(_trTab==='progress'?' active':'')+'" data-tr-tab="progress"><i class="ti ti-chart-bar"></i>Progress</button>'+
     '<button class="training-tab'+(_trTab==='library'?' active':'')+'" data-tr-tab="library"><i class="ti ti-search"></i>Exercise Library</button>'+
     '<button class="training-tab'+(_trTab==='routines'?' active':'')+'" data-tr-tab="routines"><i class="ti ti-list-check"></i>Routine Builder</button>'+
     '<button class="training-tab'+(_trTab==='sessions'?' active':'')+'" data-tr-tab="sessions"><i class="ti ti-calendar-event"></i>Session Log</button>'+
@@ -868,7 +869,8 @@ function renderTraining(app){
 function renderTrainingContent(){
   var cont=document.getElementById('tr-content');
   if(!cont)return;
-  if(_trTab==='library')renderLibrary(cont);
+  if(_trTab==='progress')renderProgress(cont);
+  else if(_trTab==='library')renderLibrary(cont);
   else if(_trTab==='routines')renderRoutines(cont);
   else renderSessions(cont);
 }
@@ -972,6 +974,285 @@ var EXERCISE_DB=[
   {name:'Jump Squat',muscle:'Full Body',equipment:'Bodyweight'},
   {name:'Mountain Climber',muscle:'Full Body',equipment:'Bodyweight'},
 ];
+
+// ── PROGRESS / TRAINING DASHBOARD ──
+// Builds per-exercise stats from logged sessions:
+//   PB (heaviest single set weight), PB date, last 5 session weights, trend, total volume
+
+function buildExerciseStats(){
+  var td=trData();
+  var sessions=(td.sessions||[]).slice().sort(function(a,b){
+    return new Date(a.date||a.startTime)-new Date(b.date||b.startTime);
+  });
+
+  // Map: exName (lowercase) -> { name, pb, pbDate, history:[{date,weight,reps,vol}], totalVol }
+  var stats={};
+
+  sessions.forEach(function(sess){
+    var dateStr=new Date(sess.date||sess.startTime).toLocaleDateString('en-SE',{day:'numeric',month:'short',year:'numeric'});
+    (sess.exercises||[]).forEach(function(ex){
+      var key=ex.name.toLowerCase();
+      if(!stats[key])stats[key]={name:ex.name,pb:0,pbDate:'',history:[],totalVol:0};
+      var s=stats[key];
+
+      // Per-set detail gives us the richest data
+      var sets=ex.setDetail;
+      if(sets&&sets.length){
+        sets.forEach(function(set){
+          var w=parseFloat(set.weight)||0;
+          var r=parseInt(set.reps)||0;
+          var vol=w*r;
+          s.totalVol+=vol;
+          if(w>s.pb){s.pb=w;s.pbDate=dateStr;}
+        });
+        // For history, record max weight this session
+        var maxW=sets.reduce(function(m,set){var v=parseFloat(set.weight)||0;return v>m?v:m;},0);
+        var totalReps=sets.reduce(function(sum,set){return sum+(parseInt(set.reps)||0);},0);
+        var sessVol=sets.reduce(function(sum,set){return sum+(parseFloat(set.weight)||0)*(parseInt(set.reps)||0);},0);
+        s.history.push({date:dateStr,dateISO:sess.date||sess.startTime,weight:maxW,reps:totalReps,vol:sessVol,sets:sets.length});
+      } else {
+        // Aggregate fallback
+        var w=parseFloat(ex.weight)||0;
+        var r=parseInt(ex.reps)||0;
+        var n=parseInt(ex.sets)||1;
+        var vol=w*r*n;
+        s.totalVol+=vol;
+        if(w>s.pb){s.pb=w;s.pbDate=dateStr;}
+        s.history.push({date:dateStr,dateISO:sess.date||sess.startTime,weight:w,reps:r,vol:vol,sets:n});
+      }
+    });
+  });
+
+  // Compute trend (last entry vs previous best before it)
+  Object.keys(stats).forEach(function(k){
+    var h=stats[k].history;
+    if(h.length>=2){
+      var last=h[h.length-1].weight;
+      var prev=0;
+      for(var i=h.length-2;i>=0;i--){if(h[i].weight>0){prev=h[i].weight;break;}}
+      stats[k].trend=prev>0?last-prev:null;
+    } else {
+      stats[k].trend=null;
+    }
+    stats[k].sessions=h.length;
+  });
+
+  return stats;
+}
+
+var _pbSearch='';
+var _pbSort='pb'; // 'pb' | 'name' | 'trend' | 'vol' | 'sessions'
+var _pbExpanded={}; // {exName: bool}
+
+function renderProgress(cont){
+  var stats=buildExerciseStats();
+  var keys=Object.keys(stats);
+
+  if(!keys.length){
+    cont.innerHTML='<div class="tr-empty" style="padding:2rem 0;text-align:center">'+
+      '<i class="ti ti-chart-bar" style="font-size:28px;display:block;margin-bottom:8px;color:var(--text-tertiary)"></i>'+
+      'No session data yet.<br><span style="font-size:12px">Log workouts in the Session Log tab or import a StrengthLog CSV to see your progress here.</span></div>';
+    return;
+  }
+
+  // Filter
+  var filtered=keys.filter(function(k){
+    return !_pbSearch||k.indexOf(_pbSearch.toLowerCase())!==-1;
+  });
+
+  // Sort
+  filtered.sort(function(a,b){
+    if(_pbSort==='name')return stats[a].name.localeCompare(stats[b].name);
+    if(_pbSort==='trend'){var ta=stats[a].trend||0,tb=stats[b].trend||0;return tb-ta;}
+    if(_pbSort==='vol')return stats[b].totalVol-stats[a].totalVol;
+    if(_pbSort==='sessions')return stats[b].sessions-stats[a].sessions;
+    return stats[b].pb-stats[a].pb; // default: pb desc
+  });
+
+  // Summary cards
+  var totalSessions=(trData().sessions||[]).length;
+  var totalExercises=keys.length;
+  var totalVol=keys.reduce(function(s,k){return s+stats[k].totalVol;},0);
+  var topPB=keys.reduce(function(best,k){return stats[k].pb>stats[best].pb?k:best;},keys[0]);
+
+  var summaryHtml=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">'+
+    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-calendar-event" style="font-size:12px"></i>Sessions</div><div class="stat-card-val">'+totalSessions+'</div></div>'+
+    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-dumbbell" style="font-size:12px"></i>Exercises tracked</div><div class="stat-card-val">'+totalExercises+'</div></div>'+
+    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-weight" style="font-size:12px"></i>Total volume</div><div class="stat-card-val" style="font-size:16px">'+Math.round(totalVol/1000).toLocaleString('en-SE')+'<span class="stat-card-unit">t</span></div></div>'+
+    '</div>';
+
+  // Search + sort bar
+  var sortBtn=function(val,label){
+    return '<button class="tr-btn tr-btn-sm'+((_pbSort===val)?' active':'')+ // use active class
+      '" data-pb-sort="'+val+'" style="'+((_pbSort===val)?'background:var(--bg-tertiary);border-color:var(--border-p);color:var(--text-primary)':'')+'">'+label+'</button>';
+  };
+  var controlsHtml=
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
+    '<input class="tr-search-inp" id="pb-search" type="text" placeholder="Filter exercises…" value="'+esc(_pbSearch)+'" style="flex:1;min-width:120px;height:32px">'+
+    '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
+    sortBtn('pb','🏆 PB')+
+    sortBtn('trend','📈 Trend')+
+    sortBtn('vol','💪 Volume')+
+    sortBtn('sessions','🗓 Sessions')+
+    sortBtn('name','A–Z')+
+    '</div></div>';
+
+  // Exercise rows
+  var rowsHtml=filtered.map(function(k){
+    var s=stats[k];
+    var h=s.history;
+    var isOpen=_pbExpanded[k];
+
+    // Trend pill
+    var trendHtml='';
+    if(s.trend!==null){
+      var sign=s.trend>=0?'+':'';
+      var tcls=s.trend>0?'pill-loss':s.trend<0?'pill-gain':'pill-none'; // green=improving
+      var tico=s.trend>0?'ti-trending-up':s.trend<0?'ti-trending-down':'ti-minus';
+      trendHtml='<span class="delta-pill '+tcls+'" style="font-size:10px"><i class="ti '+tico+'" style="font-size:10px"></i>'+sign+s.trend.toFixed(1)+' kg</span>';
+    }
+
+    // Last 5 sessions mini chart (sparkline as inline bars)
+    var recent=h.slice(-5);
+    var maxW=recent.reduce(function(m,r){return r.weight>m?r.weight:m;},0);
+    var sparkHtml='';
+    if(recent.length>1&&maxW>0){
+      sparkHtml='<div style="display:flex;gap:2px;align-items:flex-end;height:20px;margin-top:4px">';
+      recent.forEach(function(r){
+        var pct=maxW>0?Math.max(15,Math.round((r.weight/maxW)*100)):15;
+        var isPB=r.weight>=s.pb&&s.pb>0;
+        sparkHtml+='<div title="'+r.date+': '+r.weight+'kg" style="flex:1;height:'+pct+'%;border-radius:2px 2px 0 0;background:'+(isPB?'#f59e0b':'var(--border-p)')+';min-height:3px;cursor:default"></div>';
+      });
+      sparkHtml+='</div>';
+    }
+
+    var card=
+      '<div style="background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:6px;overflow:hidden">'+
+      // Header row
+      '<div class="pb-row-hdr" data-pb-key="'+esc(k)+'" style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:9px 12px;cursor:pointer;user-select:none">'+
+        '<div>'+
+          '<div style="font-size:13px;font-weight:500;color:var(--text-primary)">'+esc(s.name)+'</div>'+
+          '<div style="font-size:11px;color:var(--text-tertiary);margin-top:1px">'+s.sessions+' session'+(s.sessions!==1?'s':'')+
+          (s.pbDate?' &bull; PB on '+s.pbDate:'')+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0">'+
+          '<div style="font-size:18px;font-weight:600;color:var(--text-primary)">'+
+            (s.pb>0?s.pb+' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">kg</span>':'—')+
+          '</div>'+
+          (trendHtml?'<div style="margin-top:3px">'+trendHtml+'</div>':'')+
+        '</div>'+
+        '<i class="ti ti-chevron-'+(isOpen?'up':'down')+'" style="font-size:13px;color:var(--text-tertiary)"></i>'+
+      '</div>';
+
+    if(isOpen){
+      // History table
+      var histRows=h.slice().reverse().slice(0,10).map(function(r,i){
+        var isPB=r.weight>=s.pb&&s.pb>0&&i===0; // mark only most recent PB occurrence
+        var volStr=r.vol>0?r.vol.toLocaleString('en-SE',{maximumFractionDigits:0})+' kg':'—';
+        return '<tr>'+
+          '<td>'+r.date+'</td>'+
+          '<td style="font-weight:500;color:'+(isPB?'#f59e0b':'var(--text-primary)')+'">'+
+            (r.weight>0?r.weight+' kg':'BW')+
+            (isPB?' <i class="ti ti-trophy" style="font-size:10px;color:#f59e0b"></i>':'')+
+          '</td>'+
+          '<td>'+r.sets+'×'+r.reps+' reps</td>'+
+          '<td style="color:var(--text-tertiary)">'+volStr+'</td>'+
+          '</tr>';
+      }).join('');
+
+      // Weight progression mini chart
+      var chartId='pb-chart-'+k.replace(/[^a-z0-9]/g,'_');
+      var chartDates=h.map(function(r){return r.date;});
+      var chartWeights=h.map(function(r){return r.weight||null;});
+      var chartVols=h.map(function(r){return r.vol>0?Math.round(r.vol):null;});
+
+      card+=
+        '<div style="padding:0 12px 12px;border-top:0.5px solid var(--border-t)">'+
+        // Sparkline + table
+        (h.length>1?
+          '<div style="margin-bottom:12px;margin-top:10px">'+
+          '<div style="font-size:11px;font-weight:500;color:var(--text-secondary);margin-bottom:6px">Weight progression</div>'+
+          '<div style="position:relative;height:90px"><canvas id="'+chartId+'"></canvas></div>'+
+          '</div>'
+        :'')+
+        '<div style="font-size:11px;font-weight:600;color:var(--text-tertiary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Last 10 sessions</div>'+
+        '<div style="overflow-x:auto">'+
+        '<table class="prog-table" style="min-width:280px">'+
+        '<thead><tr>'+
+        '<th>Date</th><th>Weight</th><th>Volume sets</th><th>Set vol</th>'+
+        '</tr></thead>'+
+        '<tbody>'+histRows+'</tbody>'+
+        '</table></div>'+
+        '</div>';
+
+      // Store chart data for post-render
+      if(h.length>1){
+        setTimeout(function(){
+          var canvas=document.getElementById(chartId);
+          if(!canvas)return;
+          // Destroy any existing instance on this canvas
+          var existing=Chart.getChart(canvas);
+          if(existing)existing.destroy();
+          var isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+          var gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
+          var tc=isDark?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.35)';
+          new Chart(canvas,{
+            type:'line',
+            data:{
+              labels:chartDates,
+              datasets:[{
+                data:chartWeights,
+                borderColor:'#f59e0b',
+                backgroundColor:'rgba(245,158,11,0.08)',
+                pointBackgroundColor:chartWeights.map(function(w){return w>=s.pb&&s.pb>0?'#f59e0b':'#f59e0b';}),
+                pointRadius:3,pointHoverRadius:5,
+                borderWidth:2,tension:0.35,fill:true,spanGaps:true
+              }]
+            },
+            options:{
+              responsive:true,maintainAspectRatio:false,
+              plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y!==null?c.parsed.y+' kg':'No data';}}}},
+              scales:{
+                x:{display:false},
+                y:{grid:{color:gc},ticks:{color:tc,font:{size:9},callback:function(v){return v+'kg';}},grace:'10%'}
+              }
+            }
+          });
+        },60);
+      }
+    }
+
+    card+='</div>';
+    return card;
+  }).join('');
+
+  cont.innerHTML=summaryHtml+controlsHtml+
+    '<div class="tr-section-title">Personal bests &amp; progression <span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-tertiary)">'+filtered.length+' exercise'+(filtered.length!==1?'s':'')+'</span></div>'+
+    rowsHtml+
+    (filtered.length===0?'<div class="tr-empty">No exercises match your search.</div>':'');
+
+  // Search handler
+  var searchEl=document.getElementById('pb-search');
+  if(searchEl){
+    searchEl.addEventListener('input',function(){_pbSearch=searchEl.value;renderProgress(cont);});
+    searchEl.focus();
+  }
+
+  // Sort buttons
+  cont.querySelectorAll('[data-pb-sort]').forEach(function(btn){
+    btn.addEventListener('click',function(){_pbSort=btn.dataset.pbSort;renderProgress(cont);});
+  });
+
+  // Expand/collapse rows
+  cont.querySelectorAll('.pb-row-hdr').forEach(function(hdr){
+    hdr.addEventListener('click',function(){
+      var k=hdr.dataset.pbKey;
+      _pbExpanded[k]=!_pbExpanded[k];
+      renderProgress(cont);
+    });
+  });
+}
 
 // ── EXERCISE LIBRARY ──
 function renderLibrary(cont){
@@ -1388,7 +1669,7 @@ function showPBModal(pbs, totalVolume){
 }
 
 // ── SESSION LOG ──
-// StrengthLog CSV format: workout,start,end,exercise,weight,bodyweight,extraWeight,
+// StrengthLog CSV columns: workout,start,end,exercise,weight,bodyweight,extraWeight,
 // reps,warmup,max,fail,checked,setComment,workoutComment,form,sleep,calories,stress
 // start/end = Unix milliseconds
 
@@ -1412,7 +1693,6 @@ function renderSessions(cont){
     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
     '<button class="tr-btn tr-btn-sm" id="sl-import-btn"><i class="ti ti-file-import" style="font-size:12px"></i>Import StrengthLog CSV</button>'+
     (histCount>0?'<button class="tr-btn tr-btn-sm" id="sl-export-btn"><i class="ti ti-file-export" style="font-size:12px"></i>Export CSV</button>':'')+
-    (histCount>0?'<button class="tr-btn tr-btn-sm tr-btn-danger" id="sl-clear-btn"><i class="ti ti-trash" style="font-size:12px"></i>Clear all sessions</button>':'')+
     '</div></div>'+
     '<input type="file" id="sl-csv-input" accept=".csv" style="display:none">';
 
@@ -1460,13 +1740,6 @@ function renderSessions(cont){
   });
   var expBtn=document.getElementById('sl-export-btn');
   if(expBtn)expBtn.addEventListener('click',exportStrengthLogCSV);
-  var clearBtn=document.getElementById('sl-clear-btn');
-  if(clearBtn)clearBtn.addEventListener('click',function(){
-    if(!confirm('Delete all '+histCount+' sessions? This cannot be undone.'))return;
-    trData().sessions=[];
-    scheduleSave();
-    renderTrainingContent();
-  });
 
   if(!allSessions.length){renderSessionList();return;}
 
@@ -1512,12 +1785,17 @@ function renderSessions(cont){
       var weight=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="weight"]');
       var setType=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="setType"]');
       var rpe=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="rpe"]');
-      return {exId:re.exId,name:re.name,
-        sets:(sets&&sets.value)||re.sets||'',
-        reps:(reps&&reps.value)||re.reps||'',
-        weight:(weight&&weight.value)||re.weight||'',
-        setType:(setType&&setType.value)||'normal',
-        rpe:(rpe&&rpe.value)||''};
+      var nSets=parseInt((sets&&sets.value)||re.sets||'1')||1;
+      var nReps=(reps&&reps.value)||re.reps||'';
+      var wVal=(weight&&weight.value)||re.weight||'';
+      var st=(setType&&setType.value)||'normal';
+      var rpeVal=(rpe&&rpe.value)||'';
+      // Build per-set detail
+      var setDetail=[];
+      for(var i=0;i<nSets;i++){
+        setDetail.push({setIndex:i,setType:st,weight:wVal,reps:nReps,rpe:rpeVal,setComment:'',durationSeconds:'',distanceKm:''});
+      }
+      return {exId:re.exId,name:re.name,sets:nSets.toString(),reps:nReps,weight:wVal,setType:st,rpe:rpeVal,setDetail:setDetail};
     });
     var dateVal=document.getElementById('sl-date').value||todayStr;
     var dp=dateVal.split('-');
@@ -1574,14 +1852,9 @@ function importStrengthLogCSV(csvText){
   var rawHeaders=parseCSVLine(lines[0]);
   var headers=rawHeaders.map(function(h){return h.toLowerCase().replace(/[^a-z0-9]/g,'_');});
 
-  function col(row,name){
-    var i=headers.indexOf(name);
-    return i>=0?(row[i]||'').trim():'';
-  }
+  function col(row,name){var i=headers.indexOf(name);return i>=0?(row[i]||'').trim():'';}
 
-  // Detect format: StrengthLog has 'workout'+'start' (ms), Hevy has 'title'+'start_time' (ISO)
   var isStrengthLog=headers.indexOf('workout')>=0&&headers.indexOf('start')>=0;
-
   function msToISO(ms){var n=parseInt(ms);return isNaN(n)?null:new Date(n).toISOString();}
 
   var workoutMap={},workoutOrder=[];
@@ -1593,12 +1866,9 @@ function importStrengthLogCSV(csvText){
 
     if(isStrengthLog){
       title=col(row,'workout')||'Imported Workout';
-      startRaw=col(row,'start');
-      endRaw=col(row,'end');
+      startRaw=col(row,'start'); endRaw=col(row,'end');
       exName=col(row,'exercise');
-      var w=col(row,'weight');
-      var bw=parseFloat(col(row,'bodyweight'))||0;
-      var extra=parseFloat(col(row,'extraweight'))||0;
+      var w=col(row,'weight'),bw=parseFloat(col(row,'bodyweight'))||0,extra=parseFloat(col(row,'extraweight'))||0;
       weight=w!==''?w:(bw>0?(bw+extra).toString():'');
       reps=col(row,'reps');
       warmup=col(row,'warmup')==='true';
@@ -1606,8 +1876,7 @@ function importStrengthLogCSV(csvText){
       workoutComment=col(row,'workoutcomment');
     } else {
       title=col(row,'title')||'Imported Workout';
-      startRaw=col(row,'start_time');
-      endRaw=col(row,'end_time');
+      startRaw=col(row,'start_time'); endRaw=col(row,'end_time');
       exName=col(row,'exercise_title');
       weight=col(row,'weight_kg')||col(row,'weight_lbs');
       reps=col(row,'reps');
@@ -1654,12 +1923,10 @@ function importStrengthLogCSV(csvText){
       var maxWeight=sets.reduce(function(mx,s){var v=parseFloat(s.weight)||0;return v>mx?v:mx;},0);
       return {
         exId:savedEx?savedEx.id:'imp_'+exName.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,30),
-        name:exName,
-        sets:sets.length.toString(),
+        name:exName,sets:sets.length.toString(),
         reps:sets[0]?sets[0].reps:'',
         weight:maxWeight>0?maxWeight.toString():'',
-        setType:'normal',rpe:'',
-        setDetail:sets
+        setType:'normal',rpe:'',setDetail:sets
       };
     });
 
@@ -1674,8 +1941,7 @@ function importStrengthLogCSV(csvText){
       sessId:'imported',sessName:wo.title,progName:'StrengthLog',
       workoutTitle:wo.title,
       date:startISO||new Date().toISOString(),
-      startTime:startISO,endTime:endISO,
-      _slStartRaw:wo.startRaw,
+      startTime:startISO,endTime:endISO,_slStartRaw:wo.startRaw,
       exercises:exercises,note:wo.note,totalVolume:totalVolume,imported:true
     });
     importedCount++;
@@ -1685,7 +1951,7 @@ function importStrengthLogCSV(csvText){
   scheduleSave();
   alert('Imported '+importedCount+' workout'+(importedCount!==1?'s':'')+
     (skippedCount?' ('+skippedCount+' already existed, skipped)':'')+
-    '.\n\nTip: Go to Exercise Library to save the exercise names \u2014 matched imports will link to your PB tracking.');
+    '.\n\nYour Progress tab will now show PBs and trends for all imported exercises.');
   renderTrainingContent();
 }
 
@@ -1700,32 +1966,26 @@ function exportStrengthLogCSV(){
   function csvRow(arr){return arr.map(csvCell).join(',');}
 
   var rows=[csvRow(HEADERS)];
-
   sessions.forEach(function(sess){
     var title=sess.workoutTitle||sess.sessName||'Workout';
-    // Convert ISO back to ms if possible, else use 0
     var startMs=sess.startTime?new Date(sess.startTime).getTime().toString():(sess.date?new Date(sess.date).getTime().toString():'');
     var endMs=sess.endTime?new Date(sess.endTime).getTime().toString():'';
     (sess.exercises||[]).forEach(function(ex){
       var sets=ex.setDetail;
       if(!sets||!sets.length){
         var nSets=parseInt(ex.sets)||1;
-        sets=[];
-        for(var i=0;i<nSets;i++)sets.push({setType:ex.setType||'normal',weight:ex.weight||'',reps:ex.reps||'',setComment:''});
+        sets=[];for(var i=0;i<nSets;i++)sets.push({setType:ex.setType||'normal',weight:ex.weight||'',reps:ex.reps||'',setComment:''});
       }
       sets.forEach(function(set){
-        var isWarmup=set.setType==='warmup'?'true':'false';
-        rows.push(csvRow([title,startMs,endMs,ex.name,set.weight||'','','',set.reps||'',isWarmup,'false','false','',set.setComment||'',sess.note||'','','','','']));
+        rows.push(csvRow([title,startMs,endMs,ex.name,set.weight||'','','',set.reps||'',set.setType==='warmup'?'true':'false','false','false','',set.setComment||'',sess.note||'','','','','']));
       });
     });
   });
 
   var blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});
   var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;a.download='h72_sessions_strengthlog.csv';
-  document.body.appendChild(a);a.click();
-  document.body.removeChild(a);URL.revokeObjectURL(url);
+  var a=document.createElement('a');a.href=url;a.download='h72_sessions_strengthlog.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
 function renderSessionList(){
@@ -1760,15 +2020,13 @@ function renderSessionList(){
         if(w>bestPrior)trend='<span style="color:var(--text-success);font-size:10px;font-weight:600"> \uD83C\uDFC6 PB</span>';
         else if(w<bestPrior)trend='<span style="color:var(--text-danger);font-size:10px"> \u25bc '+bestPrior+' kg prev</span>';
       } else if(w>0&&bestPrior===null){trend='<span style="color:var(--text-tertiary);font-size:10px"> first log</span>';}
-
       var setsSummary='';
       if(e.setDetail&&e.setDetail.length>0){
-        // Group consecutive sets with same weight into "NxWeight" format
         var groups=[];
         e.setDetail.forEach(function(set){
           var last=groups.length?groups[groups.length-1]:null;
           var wStr=set.weight||'BW';
-          if(last&&last.weight===wStr&&last.type===set.setType){last.count++;}
+          if(last&&last.weight===wStr&&last.type===set.setType){last.count++;last.reps=set.reps;}
           else{groups.push({weight:wStr,count:1,reps:set.reps,type:set.setType});}
         });
         setsSummary=groups.map(function(g){
@@ -1780,7 +2038,6 @@ function renderSessionList(){
       }
       return '<div class="session-ex-row"><span style="color:var(--text-primary)">'+esc(e.name)+'</span><span style="text-align:right">'+setsSummary+trend+'</span></div>';
     }).join('');
-
     var vol=s.totalVolume||calcTotalVolume(s.exercises);
     var importBadge=s.imported?'<span style="font-size:10px;background:var(--bg-success);color:var(--text-success);padding:1px 6px;border-radius:20px;font-weight:500;margin-left:4px">StrengthLog</span>':'';
     return '<div class="session-card">'+
