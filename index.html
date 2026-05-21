@@ -33,13 +33,13 @@
 
   /* ── Auth ── */
   /* ── Auth layout ── */
-  .auth-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem 1.5rem; gap: 0.1rem; }
+  .auth-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1.5rem; gap: 2rem; }
   .auth-logo-top { display: flex; flex-direction: column; align-items: center; gap: 0; }
-  .auth-logo-top img { width: 300px; height: 300px; object-fit: contain; filter: drop-shadow(0 4px 24px rgba(167,139,250,0.4)); }
-  .auth-columns { display: flex; align-items: flex-start; gap: 3rem; width: 100%; max-width: 980px; justify-content: center; }
-  .auth-showcase { flex: 1; max-width: 460px; display: flex; flex-direction: column; gap: 0.625rem; }
-  .auth-showcase-title { font-size: 28px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.15; margin-bottom: .1rem; }
-  .auth-showcase-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: .25rem; line-height: 1.4; }
+  .auth-logo-top img { width: 160px; height: 160px; object-fit: contain; filter: drop-shadow(0 4px 24px rgba(167,139,250,0.4)); }
+  .auth-columns { display: flex; align-items: flex-start; gap: 3rem; width: 100%; max-width: 960px; justify-content: center; }
+  .auth-showcase { flex: 1; max-width: 460px; display: flex; flex-direction: column; gap: 1rem; }
+  .auth-showcase-title { font-size: 28px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.15; margin-bottom: .25rem; }
+  .auth-showcase-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: .5rem; line-height: 1.5; }
   .feature-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: flex-start; gap: 14px; }
   .feature-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
   .feature-icon.blue   { background: rgba(96,200,245,0.15); color: #60c8f5; }
@@ -52,7 +52,7 @@
   .feature-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
   .feature-pill { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; border: 0.5px solid var(--border-t); color: var(--text-secondary); }
   @media (max-width: 820px) { .auth-showcase { display: none; } .auth-columns { flex-direction: column; align-items: center; } }
-  .auth-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 400px; flex-shrink: 0; align-self: flex-start; margin-top: 228px; }
+  .auth-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 380px; }
   .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 1.75rem; }
   .auth-logo img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(167,139,250,0.35)); }
   .auth-logo-name { font-size: 26px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
@@ -82,7 +82,7 @@
   /* ── Header ── */
   .app-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.75rem; gap: 14px; }
   .app-logo { display: flex; align-items: center; justify-content: center; }
-  .app-logo img { width: 320px; height: 320px; object-fit: contain; filter: drop-shadow(0 4px 16px rgba(167,139,250,0.45)); }
+  .app-logo img { width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 4px 16px rgba(167,139,250,0.45)); }
   .app-logo-text { display: none; }
   .app-logo-name { display: none; }
   .app-logo-sub { display: none; }
@@ -202,7 +202,7 @@
 
   @media (max-width: 560px) {
     body { padding: 1rem .625rem; }
-    .app-logo img { width: 240px; height: 240px; }
+    .app-logo img { width: 100px; height: 100px; }
     .col-headers, .day-row { grid-template-columns: 44px 1fr 1fr 1fr 24px; }
     .col-hdr:nth-child(5), .vs-goal-cell { display: none; }
     .period-header { flex-direction: column; align-items: flex-start; }
@@ -1388,6 +1388,13 @@ function showPBModal(pbs, totalVolume){
 }
 
 // ── SESSION LOG ──
+// StrengthLog-aligned CSV columns:
+// title, start_time, end_time, description, exercise_title, superset_id,
+// exercise_notes, set_index, set_type, weight_kg, reps, distance_km,
+// duration_seconds, rpe
+
+var SET_TYPES=['normal','warmup','dropset','failure'];
+
 function renderSessions(cont){
   var td=trData();
   var allSessions=[];
@@ -1397,46 +1404,101 @@ function renderSessions(cont){
     });
   });
 
-  var html='<div class="tr-section-title">Log a workout</div>';
+  var todayStr=new Date().toLocaleDateString('sv-SE');
+
+  // ── toolbar: history count + import + export ──
+  var histCount=(td.sessions||[]).length;
+  var html=
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">'+
+    '<div class="tr-section-title" style="margin-bottom:0">Log a workout</div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+    '<button class="tr-btn tr-btn-sm" id="sl-import-btn" title="Import StrengthLog CSV"><i class="ti ti-file-import" style="font-size:12px"></i>Import CSV</button>'+
+    (histCount>0?'<button class="tr-btn tr-btn-sm" id="sl-export-btn" title="Export to StrengthLog CSV"><i class="ti ti-file-export" style="font-size:12px"></i>Export CSV</button>':'')+
+    '</div></div>'+
+    '<input type="file" id="sl-csv-input" accept=".csv" style="display:none">';
+
   if(!allSessions.length){
-    html+='<div class="tr-empty">Build a program with sessions in the Routine Builder tab first, then log workouts here.</div>';
-    cont.innerHTML=html;return;
+    html+='<div class="tr-empty" style="margin-bottom:16px">Build a program with sessions in the Routine Builder tab first, then log workouts here.</div>';
+  } else {
+    var opts=allSessions.map(function(s,i){return '<option value="'+i+'">'+esc(s.progName)+' — '+esc(s.sessName)+'</option>';}).join('');
+    html+='<select class="tr-select" id="sl-sess">'+opts+'</select>';
+    html+=
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+      '<div class="tr-field" style="margin-bottom:0"><label class="tr-label">Date</label>'+
+      '<input class="tr-inp" type="date" id="sl-date" value="'+todayStr+'" style="height:36px"></div>'+
+      '<div class="tr-field" style="margin-bottom:0"><label class="tr-label">Workout title <span style="font-weight:400;color:var(--text-tertiary)">(optional override)</span></label>'+
+      '<input class="tr-inp" id="sl-title" type="text" placeholder="e.g. Push Day A" style="height:36px"></div>'+
+      '</div>';
+    html+='<div id="sl-ex-form" class="session-log-form"></div>';
+    html+=
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+      '<div class="tr-field" style="margin-bottom:0"><label class="tr-label">Start time <span style="font-weight:400;color:var(--text-tertiary)">(optional)</span></label>'+
+      '<input class="tr-inp" type="time" id="sl-start" style="height:36px"></div>'+
+      '<div class="tr-field" style="margin-bottom:0"><label class="tr-label">End time <span style="font-weight:400;color:var(--text-tertiary)">(optional)</span></label>'+
+      '<input class="tr-inp" type="time" id="sl-end" style="height:36px"></div>'+
+      '</div>';
+    html+='<div class="tr-field"><label class="tr-label">Workout note (optional)</label><textarea class="tr-textarea" id="sl-note" placeholder="How did it go?"></textarea></div>';
+    html+='<button class="tr-btn tr-btn-primary" id="sl-log" style="margin-bottom:16px"><i class="ti ti-check"></i>Log session</button>';
   }
 
-  // Default date = today in local YYYY-MM-DD
-  var todayStr=new Date().toLocaleDateString('sv-SE');
-  var opts=allSessions.map(function(s,i){return '<option value="'+i+'">'+esc(s.progName)+' — '+esc(s.sessName)+'</option>';}).join('');
-  html+='<select class="tr-select" id="sl-sess">'+opts+'</select>';
-  html+='<div class="tr-field" style="margin-bottom:10px"><label class="tr-label">Date</label>'+
-    '<input class="tr-inp" type="date" id="sl-date" value="'+todayStr+'" style="height:36px"></div>';
-  html+='<div id="sl-ex-form" class="session-log-form"></div>';
-  html+='<div class="tr-field"><label class="tr-label">Note (optional)</label><textarea class="tr-textarea" id="sl-note" placeholder="How did it go?"></textarea></div>';
-  html+='<button class="tr-btn tr-btn-primary" id="sl-log" style="margin-bottom:16px"><i class="ti ti-check"></i>Log session</button>';
   html+='<div class="tr-divider"></div>'+
-    '<div class="tr-section-title">Session history <span style="font-size:10px;font-weight:400;color:var(--text-tertiary);text-transform:none;letter-spacing:0">'+((td.sessions||[]).length)+' sessions total</span></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+    '<div class="tr-section-title" style="margin-bottom:0">Session history <span style="font-size:10px;font-weight:400;color:var(--text-tertiary);text-transform:none;letter-spacing:0">'+histCount+' sessions</span></div>'+
+    '</div>'+
     '<div id="tr-session-list" class="session-list"></div>';
+
   cont.innerHTML=html;
+
+  // ── CSV import ──
+  document.getElementById('sl-import-btn').addEventListener('click',function(){
+    document.getElementById('sl-csv-input').click();
+  });
+  document.getElementById('sl-csv-input').addEventListener('change',function(e){
+    var file=e.target.files[0];if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{importStrengthLogCSV(ev.target.result);}
+      catch(err){alert('Import failed: '+err.message);}
+      e.target.value='';
+    };
+    reader.readAsText(file);
+  });
+
+  // ── CSV export ──
+  var expBtn=document.getElementById('sl-export-btn');
+  if(expBtn)expBtn.addEventListener('click',exportStrengthLogCSV);
+
+  if(!allSessions.length){renderSessionList();return;}
 
   function buildExForm(){
     var idx=parseInt(document.getElementById('sl-sess').value)||0;
     var s=allSessions[idx];
     var form=document.getElementById('sl-ex-form');
-    if(!s||!s.exercises.length){form.innerHTML='<div class="tr-empty" style="padding:.5rem 0">This session has no exercises yet. Add some in the Routine Builder.</div>';return;}
-    var hdrs='<div class="session-log-ex" style="margin-bottom:3px">'+
+    if(!s||!s.exercises.length){
+      form.innerHTML='<div class="tr-empty" style="padding:.5rem 0">This session has no exercises yet. Add some in the Routine Builder.</div>';
+      return;
+    }
+    // Header row
+    var hdrs='<div style="display:grid;grid-template-columns:1fr 48px 52px 64px 72px 46px;gap:5px;margin-bottom:3px;align-items:center">'+
       '<div style="font-size:10px;color:var(--text-tertiary)">Exercise</div>'+
       '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Sets</div>'+
       '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Reps</div>'+
-      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Weight (kg)</div>'+
+      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">kg</div>'+
+      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Type</div>'+
+      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">RPE</div>'+
       '</div>';
+    var typeOpts=SET_TYPES.map(function(t){return '<option value="'+t+'">'+t.charAt(0).toUpperCase()+t.slice(1)+'</option>';}).join('');
     var rows=s.exercises.map(function(re,rei){
-      return '<div class="session-log-ex">'+
+      return '<div style="display:grid;grid-template-columns:1fr 48px 52px 64px 72px 46px;gap:5px;margin-bottom:4px;align-items:center">'+
         '<div style="font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(re.name)+'">'+esc(re.name)+'</div>'+
-        '<input class="routine-ex-inp" type="number" min="1" max="99" placeholder="'+esc(re.sets||'3')+'" data-sl-rei="'+rei+'" data-sl-f="sets" style="text-align:center">'+
-        '<input class="routine-ex-inp" type="number" min="1" max="999" placeholder="'+esc(re.reps||'10')+'" data-sl-rei="'+rei+'" data-sl-f="reps" style="text-align:center">'+
-        '<input class="routine-ex-inp" type="number" min="0" max="9999" step="0.5" placeholder="'+esc(re.weight||'0')+'" data-sl-rei="'+rei+'" data-sl-f="weight" style="text-align:center">'+
+        '<input class="routine-ex-inp" type="number" min="1" max="99" placeholder="'+esc(re.sets||'3')+'" data-sl-rei="'+rei+'" data-sl-f="sets">'+
+        '<input class="routine-ex-inp" type="number" min="1" max="999" placeholder="'+esc(re.reps||'10')+'" data-sl-rei="'+rei+'" data-sl-f="reps">'+
+        '<input class="routine-ex-inp" type="number" min="0" max="9999" step="0.5" placeholder="'+esc(re.weight||'0')+'" data-sl-rei="'+rei+'" data-sl-f="weight">'+
+        '<select class="routine-ex-inp" data-sl-rei="'+rei+'" data-sl-f="setType" style="padding:0 4px;font-size:11px">'+typeOpts+'</select>'+
+        '<input class="routine-ex-inp" type="number" min="1" max="10" step="0.5" placeholder="—" data-sl-rei="'+rei+'" data-sl-f="rpe">'+
         '</div>';
     }).join('');
-    form.innerHTML=hdrs+rows;
+    form.innerHTML='<div class="session-log-form">'+hdrs+rows+'</div>';
   }
   buildExForm();
   document.getElementById('sl-sess').addEventListener('change',buildExForm);
@@ -1449,28 +1511,58 @@ function renderSessions(cont){
       var sets=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="sets"]');
       var reps=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="reps"]');
       var weight=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="weight"]');
-      return {exId:re.exId,name:re.name,
+      var setType=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="setType"]');
+      var rpe=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="rpe"]');
+      return {
+        exId:re.exId,
+        name:re.name,
         sets:(sets&&sets.value)||re.sets||'',
         reps:(reps&&reps.value)||re.reps||'',
-        weight:(weight&&weight.value)||re.weight||''};
+        weight:(weight&&weight.value)||re.weight||'',
+        setType:(setType&&setType.value)||'normal',
+        rpe:(rpe&&rpe.value)||''
+      };
     });
-    // Use chosen date — store as ISO string at noon local time so date doesn't shift on display
     var dateVal=document.getElementById('sl-date').value||todayStr;
     var dateParts=dateVal.split('-');
-    var chosenDate=new Date(parseInt(dateParts[0]),parseInt(dateParts[1])-1,parseInt(dateParts[2]),12,0,0);
+    var startTimeVal=document.getElementById('sl-start').value;
+    var endTimeVal=document.getElementById('sl-end').value;
+    var titleVal=(document.getElementById('sl-title').value||'').trim()||s.sessName;
     var note=(document.getElementById('sl-note').value||'').trim();
+
+    // Build ISO start/end times
+    function buildISO(dateParts,timeStr,defaultHour){
+      var h=defaultHour,m=0;
+      if(timeStr){var tp=timeStr.split(':');h=parseInt(tp[0]);m=parseInt(tp[1]);}
+      return new Date(parseInt(dateParts[0]),parseInt(dateParts[1])-1,parseInt(dateParts[2]),h,m,0).toISOString();
+    }
+    var startISO=buildISO(dateParts,startTimeVal,12);
+    var endISO=endTimeVal?buildISO(dateParts,endTimeVal,13):null;
+
     var totalVolume=calcTotalVolume(exercises);
-    var session={id:'s_'+Date.now(),sessId:s.sessId,sessName:s.sessName,progName:s.progName,
-      date:chosenDate.toISOString(),exercises:exercises,note:note,totalVolume:totalVolume};
+    var session={
+      id:'s_'+Date.now(),
+      sessId:s.sessId,
+      sessName:s.sessName,
+      progName:s.progName,
+      workoutTitle:titleVal,
+      date:startISO,
+      startTime:startISO,
+      endTime:endISO,
+      exercises:exercises,
+      note:note,
+      totalVolume:totalVolume
+    };
     if(!td.sessions)td.sessions=[];
     td.sessions.unshift(session);
-    // Sort all sessions by date descending so history is always in order
-    td.sessions.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+    td.sessions.sort(function(a,b){return new Date(b.date||b.startTime)-new Date(a.date||a.startTime);});
     scheduleSave();
     var pbs=detectPBs(session,td.sessions);
     showPBModal(pbs,totalVolume);
     document.getElementById('sl-note').value='';
-    // Reset date to today
+    document.getElementById('sl-title').value='';
+    document.getElementById('sl-start').value='';
+    document.getElementById('sl-end').value='';
     document.getElementById('sl-date').value=new Date().toLocaleDateString('sv-SE');
     buildExForm();
     renderSessionList();
@@ -1479,15 +1571,238 @@ function renderSessions(cont){
   renderSessionList();
 }
 
+// ── CSV IMPORT ── (StrengthLog / Hevy compatible format)
+// Expected header: title,start_time,end_time,description,exercise_title,
+//   superset_id,exercise_notes,set_index,set_type,weight_kg,reps,
+//   distance_km,duration_seconds,rpe
+function importStrengthLogCSV(csvText){
+  var lines=csvText.trim().split(/\r?\n/);
+  if(lines.length<2)throw new Error('File appears empty.');
+
+  function parseCSVLine(line){
+    var result=[],cur='',inQ=false;
+    for(var i=0;i<line.length;i++){
+      var c=line[i];
+      if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else{inQ=!inQ;}}
+      else if(c===','&&!inQ){result.push(cur.trim());cur='';}
+      else{cur+=c;}
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  var headers=parseCSVLine(lines[0]).map(function(h){return h.toLowerCase().replace(/[^a-z0-9]/g,'_');});
+  function col(row,name){
+    var i=headers.indexOf(name);
+    return i>=0?(row[i]||'').trim():'';
+  }
+  // Support both weight_kg and weight_lbs
+  var hasKg=headers.indexOf('weight_kg')>=0;
+  var hasLbs=headers.indexOf('weight_lbs')>=0;
+  function getWeight(row){
+    if(hasKg){var v=parseFloat(col(row,'weight_kg'));return isNaN(v)?'':v.toString();}
+    if(hasLbs){var v2=parseFloat(col(row,'weight_lbs'));return isNaN(v2)?'':(v2*0.453592).toFixed(2);}
+    return '';
+  }
+
+  // Group rows by workout (title + start_time)
+  var workoutMap={};
+  var workoutOrder=[];
+  for(var i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    var row=parseCSVLine(lines[i]);
+    var title=col(row,'title')||'Imported Workout';
+    var startTime=col(row,'start_time');
+    var key=title+'||'+startTime;
+    if(!workoutMap[key]){
+      workoutMap[key]={
+        title:title,
+        startTime:startTime,
+        endTime:col(row,'end_time'),
+        description:col(row,'description'),
+        exercises:{}
+      };
+      workoutOrder.push(key);
+    }
+    var exTitle=col(row,'exercise_title');
+    if(!exTitle)continue;
+    if(!workoutMap[key].exercises[exTitle]){
+      workoutMap[key].exercises[exTitle]={
+        name:exTitle,
+        notes:col(row,'exercise_notes'),
+        sets:[]
+      };
+    }
+    workoutMap[key].exercises[exTitle].sets.push({
+      setIndex:col(row,'set_index'),
+      setType:col(row,'set_type')||'normal',
+      weight:getWeight(row),
+      reps:col(row,'reps'),
+      rpe:col(row,'rpe'),
+      durationSeconds:col(row,'duration_seconds'),
+      distanceKm:col(row,'distance_km')||col(row,'distance_miles')
+    });
+  }
+
+  if(!workoutOrder.length)throw new Error('No workout rows found in file.');
+
+  var td=trData();
+  if(!td.sessions)td.sessions=[];
+
+  var importedCount=0;
+  var skippedCount=0;
+
+  workoutOrder.forEach(function(key){
+    var w=workoutMap[key];
+    // Dedup: skip if a session with same title+startTime already exists
+    var alreadyExists=td.sessions.some(function(s){
+      return (s.workoutTitle===w.title||s.sessName===w.title)&&s.startTime===w.startTime;
+    });
+    if(alreadyExists){skippedCount++;return;}
+
+    // Build exercise list: group sets per exercise, pick max weight as representative
+    var exercises=Object.keys(w.exercises).map(function(exName){
+      var ex=w.exercises[exName];
+      var sets=ex.sets;
+      // Find a matching saved exercise by name (case-insensitive)
+      var savedEx=(td.exercises||[]).find(function(e){return e.name.toLowerCase()===exName.toLowerCase();});
+      // For per-set detail, store sets array; for volume use all sets
+      var maxWeight=sets.reduce(function(mx,s){var v=parseFloat(s.weight)||0;return v>mx?v:mx;},0);
+      var totalReps=sets.reduce(function(s2,s){return s2+(parseInt(s.reps)||0);},0);
+      // Store the full sets array for rich display + export fidelity
+      return {
+        exId:savedEx?savedEx.id:'imported_'+exName.toLowerCase().replace(/\s+/g,'_'),
+        name:exName,
+        sets:sets.length.toString(),
+        reps:sets[0]?sets[0].reps:'',
+        weight:maxWeight>0?maxWeight.toString():'',
+        setType:sets[0]?sets[0].setType:'normal',
+        rpe:sets[0]?sets[0].rpe:'',
+        setDetail:sets,  // full per-set detail
+        exerciseNotes:ex.notes
+      };
+    });
+
+    var dateISO=w.startTime||new Date().toISOString();
+    var totalVolume=exercises.reduce(function(sum,e){
+      if(e.setDetail&&e.setDetail.length){
+        return sum+e.setDetail.reduce(function(s2,set){
+          return s2+(parseFloat(set.weight)||0)*(parseInt(set.reps)||0);
+        },0);
+      }
+      return sum+(parseFloat(e.sets)||0)*(parseFloat(e.reps)||0)*(parseFloat(e.weight)||0);
+    },0);
+
+    td.sessions.push({
+      id:'s_imp_'+Date.now()+'_'+importedCount,
+      sessId:'imported',
+      sessName:w.title,
+      progName:'Imported',
+      workoutTitle:w.title,
+      date:dateISO,
+      startTime:w.startTime,
+      endTime:w.endTime,
+      exercises:exercises,
+      note:w.description,
+      totalVolume:totalVolume,
+      imported:true
+    });
+    importedCount++;
+  });
+
+  td.sessions.sort(function(a,b){return new Date(b.date||b.startTime)-new Date(a.date||a.startTime);});
+  scheduleSave();
+
+  var msg='Imported '+importedCount+' session'+(importedCount!==1?'s':'')+(skippedCount?' ('+skippedCount+' duplicate'+(skippedCount!==1?'s':'')+' skipped)':'')+'.\n\nExercises from the import are matched to your saved library where names match exactly. Others appear with an "imported" ID.';
+  alert(msg);
+  renderTrainingContent();
+}
+
+// ── CSV EXPORT ── (StrengthLog / Hevy compatible)
+function exportStrengthLogCSV(){
+  var td=trData();
+  var sessions=td.sessions||[];
+  if(!sessions.length){alert('No sessions to export.');return;}
+
+  var HEADERS=['title','start_time','end_time','description','exercise_title','superset_id','exercise_notes','set_index','set_type','weight_kg','reps','distance_km','duration_seconds','rpe'];
+
+  function csvCell(v){
+    var s=v===null||v===undefined?'':String(v);
+    if(s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0)return '"'+s.replace(/"/g,'""')+'"';
+    return s;
+  }
+  function csvRow(arr){return arr.map(csvCell).join(',');}
+
+  var rows=[csvRow(HEADERS)];
+
+  sessions.forEach(function(sess){
+    var title=sess.workoutTitle||sess.sessName||'Workout';
+    var startTime=sess.startTime||sess.date||'';
+    var endTime=sess.endTime||'';
+    var description=sess.note||'';
+    (sess.exercises||[]).forEach(function(ex){
+      // If we have per-set detail (from import or rich log), use it; otherwise synthesise sets
+      var sets=ex.setDetail;
+      if(!sets||!sets.length){
+        // Synthesise sets from aggregate fields
+        var nSets=parseInt(ex.sets)||1;
+        sets=[];
+        for(var i=0;i<nSets;i++){
+          sets.push({setIndex:i,setType:ex.setType||'normal',weight:ex.weight||'',reps:ex.reps||'',rpe:ex.rpe||'',durationSeconds:'',distanceKm:''});
+        }
+      }
+      sets.forEach(function(set,si){
+        rows.push(csvRow([
+          title,
+          startTime,
+          endTime,
+          description,
+          ex.name,
+          '',                        // superset_id
+          ex.exerciseNotes||'',
+          set.setIndex!==undefined?set.setIndex:si,
+          set.setType||'normal',
+          set.weight||'',
+          set.reps||'',
+          set.distanceKm||'',
+          set.durationSeconds||'',
+          set.rpe||''
+        ]));
+      });
+    });
+  });
+
+  var csvContent=rows.join('\n');
+  var blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='h72_sessions_strengthlog.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function renderSessionList(){
   var td=trData();
   var listEl=document.getElementById('tr-session-list');
   if(!listEl)return;
-  if(!td.sessions||!td.sessions.length){listEl.innerHTML='<div class="tr-empty">No sessions logged yet.</div>';return;}
+  if(!td.sessions||!td.sessions.length){listEl.innerHTML='<div class="tr-empty">No sessions logged yet. Log a workout above or import a StrengthLog CSV.</div>';return;}
+
+  var setTypeBadge={'warmup':'<span style="font-size:9px;background:var(--bg-info);color:var(--text-info);padding:1px 5px;border-radius:20px;margin-left:4px">warmup</span>',
+    'dropset':'<span style="font-size:9px;background:var(--bg-warning);color:var(--text-warning);padding:1px 5px;border-radius:20px;margin-left:4px">drop</span>',
+    'failure':'<span style="font-size:9px;background:var(--bg-danger);color:var(--text-danger);padding:1px 5px;border-radius:20px;margin-left:4px">fail</span>'};
+
   listEl.innerHTML=td.sessions.map(function(s,si){
-    var dateStr=new Date(s.date).toLocaleDateString('en-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    var dateStr=new Date(s.date||s.startTime).toLocaleDateString('en-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    // Duration
+    var durationStr='';
+    if(s.startTime&&s.endTime){
+      var mins=Math.round((new Date(s.endTime)-new Date(s.startTime))/60000);
+      if(mins>0)durationStr='<span style="color:var(--text-tertiary);font-size:11px"> · '+mins+' min</span>';
+    }
     var exRows=(s.exercises||[]).map(function(e){
-      // Find best prior weight for this exercise across all later (older) sessions
       var bestPrior=null;
       for(var i=si+1;i<td.sessions.length;i++){
         var pe=(td.sessions[i].exercises||[]).find(function(pe){return pe.exId===e.exId;});
@@ -1499,21 +1814,37 @@ function renderSessionList(){
       var trend='';
       if(w>0&&bestPrior!==null){
         if(w>bestPrior) trend='<span style="color:var(--text-success);font-size:10px;font-weight:600"> 🏆 PB</span>';
-        else if(w<bestPrior) trend='<span style="color:var(--text-danger);font-size:10px"> ▼ '+bestPrior+'kg prev</span>';
+        else if(w<bestPrior) trend='<span style="color:var(--text-danger);font-size:10px"> ▼ '+bestPrior+' kg prev</span>';
       } else if(w>0&&bestPrior===null){
         trend='<span style="color:var(--text-tertiary);font-size:10px"> first log</span>';
       }
-      var detail=[e.sets?e.sets+'×':'',e.reps?e.reps+' reps':'',w>0?'@ '+w+'kg':''].filter(Boolean).join(' ');
-      return '<div class="session-ex-row"><span style="color:var(--text-primary)">'+esc(e.name)+'</span><span>'+detail+trend+'</span></div>';
+      var typeBadge=e.setType&&e.setType!=='normal'?(setTypeBadge[e.setType]||''):'';
+      var rpeStr=e.rpe?'<span style="color:var(--text-tertiary);font-size:10px"> RPE '+e.rpe+'</span>':'';
+      // If we have per-set detail, show a compact set summary
+      var setsSummary='';
+      if(e.setDetail&&e.setDetail.length>0){
+        setsSummary=e.setDetail.map(function(set){
+          var w2=parseFloat(set.weight)||0;
+          var r=set.reps||'?';
+          var tb=set.setType&&set.setType!=='normal'?(setTypeBadge[set.setType]||''):'';
+          return (w2>0?w2+'kg':'BW')+'×'+r+tb;
+        }).join(' | ');
+      } else {
+        setsSummary=[e.sets?e.sets+'×':'',e.reps?e.reps+' reps':'',w>0?'@ '+w+' kg':''].filter(Boolean).join(' ');
+      }
+      return '<div class="session-ex-row"><span style="color:var(--text-primary)">'+esc(e.name)+'</span>'+
+        '<span style="text-align:right">'+setsSummary+typeBadge+rpeStr+trend+'</span></div>';
     }).join('');
     var vol=s.totalVolume||calcTotalVolume(s.exercises);
+    var importBadge=s.imported?'<span style="font-size:10px;background:var(--bg-success);color:var(--text-success);padding:1px 6px;border-radius:20px;font-weight:500">imported</span>':'';
     return '<div class="session-card">'+
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">'+
-      '<div class="session-date">'+dateStr+'</div>'+
-      (vol>0?'<div style="font-size:11px;color:var(--text-tertiary)">Vol: '+vol.toLocaleString('en-SE',{maximumFractionDigits:0})+' kg</div>':'')+
-      '</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;flex-wrap:wrap;gap:4px">'+
+      '<div class="session-date">'+dateStr+durationStr+'</div>'+
+      '<div style="display:flex;gap:5px;align-items:center">'+importBadge+
+      (vol>0?'<div style="font-size:11px;color:var(--text-tertiary)">'+vol.toLocaleString('en-SE',{maximumFractionDigits:0})+' kg vol</div>':'')+
+      '</div></div>'+
       '<div class="session-routine-name"><i class="ti ti-barbell" style="font-size:13px;color:var(--text-secondary)"></i>'+
-      esc(s.progName||'')+' — '+esc(s.sessName||s.routineName||'')+'</div>'+
+      esc(s.workoutTitle||s.progName||'')+' — '+esc(s.sessName||s.routineName||'')+'</div>'+
       '<div class="session-ex-rows">'+exRows+'</div>'+
       (s.note?'<div class="session-note">'+esc(s.note)+'</div>':'')+
       '</div>';
