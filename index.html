@@ -352,8 +352,9 @@ onAuthStateChanged(auth, async (user) => {
     else{const t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);m.setDate(t.getDate()-dow);window._appData={name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,showGuide:false,showTrain:false,periods:[makePeriod()]};}
     window._appData.periods.forEach(function(p){if(!p.stepGoal)p.stepGoal=8000;});
     if(window._appData.showGuide===undefined)window._appData.showGuide=false;
-    if(window._appData.showTrain===undefined)window._appData.showTrain=false;
-    if(!window._appData.training)window._appData.training={exercises:[],routines:[],sessions:[]};
+    window._appData.showTrain=false;
+    if(!window._appData.training)window._appData.training={exercises:[],programs:[],sessions:[]};
+    if(!window._appData.training.programs){window._appData.training.programs=window._appData.training.routines?[{id:'prog_migrated',name:'My Program',sessions:window._appData.training.routines.map(function(r){return {id:r.id,name:r.name,exercises:r.exercises||[]};})]:[];}if(!window._appData.training.sessions)window._appData.training.sessions=[];if(!window._appData.training.exercises)window._appData.training.exercises=[];
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     render();
@@ -742,14 +743,15 @@ function render(){
 
 // State for training UI (in-memory, not persisted)
 var _trTab='library';   // 'library' | 'routines' | 'sessions'
-var _trRoutineOpen={};  // {routineId: bool} expanded state
+var _trProgramOpen={};  // {programId: bool}
+var _trSessionOpen={};  // {sessionId: bool}
 
 
 function trData(){
   var d=window._appData;
-  if(!d.training)d.training={exercises:[],routines:[],sessions:[]};
+  if(!d.training)d.training={exercises:[],programs:[],sessions:[]};
   if(!d.training.exercises)d.training.exercises=[];
-  if(!d.training.routines)d.training.routines=[];
+  if(!d.training.programs)d.training.programs=[];
   if(!d.training.sessions)d.training.sessions=[];
   return d.training;
 }
@@ -977,7 +979,7 @@ function renderCustomExercises(){
       var id=btn.dataset.delEx;
       var td=trData();
       td.exercises=td.exercises.filter(function(e){return e.id!==id;});
-      td.routines.forEach(function(r){r.exercises=r.exercises.filter(function(re){return re.exId!==id;});});
+      (td.programs||[]).forEach(function(p){(p.sessions||[]).forEach(function(s){s.exercises=(s.exercises||[]).filter(function(re){return re.exId!==id;});});});
       scheduleSave();renderCustomExercises();
     });
   });
@@ -1004,110 +1006,217 @@ function showAddCustomModal(){
   });
 }
 
-// ── ROUTINE BUILDER ──
+// ── PROGRAM BUILDER ──
+// Data model: training.programs = [{id, name, sessions:[{id, name, exercises:[{exId,name,sets,reps,weight}]}]}]
+// training.sessions = logged workout history
+
+var _trProgramOpen={};  // {programId: bool}
+var _trSessionOpen={};  // {sessionId: bool} (within program)
+
 function renderRoutines(cont){
   var td=trData();
-  var html='<div class="tr-section-title">Your routines</div>'+
-    '<div id="tr-routine-list" class="routine-list"></div>'+
-    '<button class="tr-btn" id="tr-add-routine"><i class="ti ti-plus"></i>New routine</button>';
+  var html=
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+    '<div class="tr-section-title" style="margin-bottom:0">Training programs</div>'+
+    '<button class="tr-btn tr-btn-sm tr-btn-primary" id="tr-add-program"><i class="ti ti-plus" style="font-size:11px"></i>New program</button>'+
+    '</div>'+
+    '<div id="tr-program-list"></div>';
   cont.innerHTML=html;
-  renderRoutineList();
-  document.getElementById('tr-add-routine').addEventListener('click',showAddRoutineModal);
+  renderProgramList();
+  document.getElementById('tr-add-program').addEventListener('click',showAddProgramModal);
 }
 
-function renderRoutineList(){
+function renderProgramList(){
   var td=trData();
-  var listEl=document.getElementById('tr-routine-list');
+  var listEl=document.getElementById('tr-program-list');
   if(!listEl)return;
-  if(!td.routines.length){listEl.innerHTML='<div class="tr-empty">No routines yet. Create one to get started.</div>';return;}
+  if(!td.programs||!td.programs.length){
+    listEl.innerHTML='<div class="tr-empty">No programs yet. Create one to get started.<br><span style="font-size:11px">Example: "3-Day Split" with sessions "Push", "Pull", "Legs".</span></div>';
+    return;
+  }
   listEl.innerHTML='';
-  td.routines.forEach(function(routine,ri){
-    var open=_trRoutineOpen[routine.id];
-    var card=document.createElement('div');card.className='routine-card';
-    var hdrHtml='<div class="routine-header" data-rcard="'+routine.id+'" style="background:var(--bg-tertiary)">'+
-      '<div class="routine-title"><i class="ti ti-list-check" style="font-size:14px;color:var(--text-secondary)"></i>'+esc(routine.name)+'<span style="font-size:11px;color:var(--text-tertiary);font-weight:400">('+routine.exercises.length+' exercises)</span></div>'+
-      '<div style="display:flex;gap:6px">'+
-      '<button class="tr-btn tr-btn-sm" data-add-ex-to="'+ri+'"><i class="ti ti-plus" style="font-size:11px"></i>Add exercise</button>'+
-      '<button class="tr-btn tr-btn-sm tr-btn-danger" data-del-routine="'+ri+'"><i class="ti ti-trash" style="font-size:11px"></i></button>'+
-      '<i class="ti ti-chevron-'+(open?'up':'down')+' chevron" style="font-size:13px;color:var(--text-tertiary);margin-left:4px;align-self:center"></i>'+
-      '</div></div>';
+  td.programs.forEach(function(prog,pi){
+    var progOpen=_trProgramOpen[prog.id];
+    var sessCount=(prog.sessions||[]).length;
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden;';
 
-    var bodyHtml='';
-    if(open){
-      var hdrs='<div class="routine-ex-row" style="margin-bottom:4px">'+
-        '<div class="routine-col-hdr">Exercise</div>'+
-        '<div class="routine-col-hdr">Sets</div>'+
-        '<div class="routine-col-hdr">Reps</div>'+
-        '<div class="routine-col-hdr">Weight</div>'+
-        '<div></div></div>';
-      var rows=routine.exercises.map(function(re,rei){
-        return '<div class="routine-ex-row" data-rei="'+rei+'" data-ri="'+ri+'">'+
-          '<div class="routine-ex-name" title="'+esc(re.name)+'">'+esc(re.name)+'</div>'+
-          '<input class="routine-ex-inp" type="number" min="1" max="99" placeholder="3" value="'+esc(re.sets||'')+'" data-ri="'+ri+'" data-rei="'+rei+'" data-f="sets">'+
-          '<input class="routine-ex-inp" type="number" min="1" max="999" placeholder="10" value="'+esc(re.reps||'')+'" data-ri="'+ri+'" data-rei="'+rei+'" data-f="reps">'+
-          '<input class="routine-ex-inp" type="number" min="0" max="9999" step="0.5" placeholder="kg" value="'+esc(re.weight||'')+'" data-ri="'+ri+'" data-rei="'+rei+'" data-f="weight">'+
-          '<button class="tr-btn tr-btn-sm tr-btn-danger" style="padding:0;width:28px;height:26px;justify-content:center" data-del-re="'+rei+'" data-ri="'+ri+'"><i class="ti ti-x" style="font-size:10px"></i></button>'+
-          '</div>';
-      }).join('');
-      bodyHtml='<div class="routine-body">'+hdrs+rows+
-        (routine.exercises.length===0?'<div class="tr-empty" style="padding:.5rem 0">No exercises yet.</div>':'')+
-        '</div>';
+    // Program header
+    var progHdr=document.createElement('div');
+    progHdr.style.cssText='padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg-tertiary);cursor:pointer;user-select:none;';
+    progHdr.innerHTML=
+      '<div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">'+
+      '<i class="ti ti-trophy" style="font-size:14px;color:var(--text-secondary);flex-shrink:0"></i>'+
+      '<span style="font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(prog.name)+'</span>'+
+      '<span style="font-size:11px;color:var(--text-tertiary);font-weight:400;flex-shrink:0">'+sessCount+' session'+(sessCount!==1?'s':'')+'</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px;flex-shrink:0">'+
+      '<button class="tr-btn tr-btn-sm" data-add-sess="'+pi+'"><i class="ti ti-plus" style="font-size:11px"></i>Add session</button>'+
+      '<button class="tr-btn tr-btn-sm tr-btn-danger" data-del-prog="'+pi+'"><i class="ti ti-trash" style="font-size:11px"></i></button>'+
+      '<i class="ti ti-chevron-'+(progOpen?'up':'down')+'" style="font-size:13px;color:var(--text-tertiary);align-self:center"></i>'+
+      '</div>';
+    card.appendChild(progHdr);
+
+    // Program body (sessions)
+    if(progOpen){
+      var body=document.createElement('div');
+      body.style.cssText='padding:8px 10px 10px;display:flex;flex-direction:column;gap:6px;';
+
+      if(!prog.sessions||!prog.sessions.length){
+        body.innerHTML='<div class="tr-empty" style="padding:.5rem 0">No sessions yet. Add a session to this program.</div>';
+      } else {
+        prog.sessions.forEach(function(sess,si){
+          var sessOpen=_trSessionOpen[sess.id];
+          var exCount=(sess.exercises||[]).length;
+          var sessCard=document.createElement('div');
+          sessCard.style.cssText='background:var(--bg-primary);border-radius:var(--radius-md);overflow:hidden;';
+
+          // Session header
+          var sessHdr=document.createElement('div');
+          sessHdr.style.cssText='padding:7px 10px;display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;user-select:none;';
+          sessHdr.innerHTML=
+            '<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">'+
+            '<i class="ti ti-list-check" style="font-size:13px;color:var(--text-secondary);flex-shrink:0"></i>'+
+            '<span style="font-size:12px;font-weight:500;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(sess.name)+'</span>'+
+            '<span style="font-size:11px;color:var(--text-tertiary);flex-shrink:0">'+exCount+' ex.</span>'+
+            '</div>'+
+            '<div style="display:flex;gap:5px;flex-shrink:0">'+
+            '<button class="tr-btn tr-btn-sm" data-add-ex="1" style="height:24px;padding:0 8px;font-size:11px"><i class="ti ti-plus" style="font-size:10px"></i>Add exercise</button>'+
+            '<button class="tr-btn tr-btn-sm tr-btn-danger" data-del-sess="1" style="height:24px;padding:0 8px;font-size:11px"><i class="ti ti-trash" style="font-size:10px"></i></button>'+
+            '<i class="ti ti-chevron-'+(sessOpen?'up':'down')+'" style="font-size:12px;color:var(--text-tertiary);align-self:center"></i>'+
+            '</div>';
+          sessCard.appendChild(sessHdr);
+
+          // Session body (exercises)
+          if(sessOpen){
+            var sessBody=document.createElement('div');
+            sessBody.style.cssText='padding:6px 10px 8px;border-top:0.5px solid var(--border-t);';
+            if(!sess.exercises||!sess.exercises.length){
+              sessBody.innerHTML='<div class="tr-empty" style="padding:.4rem 0;font-size:12px">No exercises yet.</div>';
+            } else {
+              var hdrs='<div class="routine-ex-row" style="margin-bottom:4px">'+
+                '<div class="routine-col-hdr">Exercise</div>'+
+                '<div class="routine-col-hdr">Sets</div>'+
+                '<div class="routine-col-hdr">Reps</div>'+
+                '<div class="routine-col-hdr">Weight</div>'+
+                '<div></div></div>';
+              var rows=sess.exercises.map(function(re,rei){
+                return '<div class="routine-ex-row">'+
+                  '<div class="routine-ex-name" title="'+esc(re.name)+'">'+esc(re.name)+'</div>'+
+                  '<input class="routine-ex-inp" type="number" min="1" max="99" placeholder="3" value="'+esc(re.sets||'')+'" data-pi="'+pi+'" data-si="'+si+'" data-rei="'+rei+'" data-f="sets">'+
+                  '<input class="routine-ex-inp" type="number" min="1" max="999" placeholder="10" value="'+esc(re.reps||'')+'" data-pi="'+pi+'" data-si="'+si+'" data-rei="'+rei+'" data-f="reps">'+
+                  '<input class="routine-ex-inp" type="number" min="0" max="9999" step="0.5" placeholder="kg" value="'+esc(re.weight||'')+'" data-pi="'+pi+'" data-si="'+si+'" data-rei="'+rei+'" data-f="weight">'+
+                  '<button class="tr-btn tr-btn-sm tr-btn-danger" style="padding:0;width:26px;height:26px;justify-content:center" data-del-ex-pi="'+pi+'" data-del-ex-si="'+si+'" data-del-ex-rei="'+rei+'"><i class="ti ti-x" style="font-size:10px"></i></button>'+
+                  '</div>';
+              }).join('');
+              sessBody.innerHTML=hdrs+rows;
+            }
+            sessCard.appendChild(sessBody);
+          }
+
+          body.appendChild(sessCard);
+
+          // Session events
+          sessHdr.addEventListener('click',function(e){
+            if(e.target.closest('button'))return;
+            _trSessionOpen[sess.id]=!_trSessionOpen[sess.id];renderProgramList();
+          });
+          sessHdr.querySelector('[data-add-ex]').addEventListener('click',function(e){
+            e.stopPropagation();showAddExToSession(pi,si);
+          });
+          sessHdr.querySelector('[data-del-sess]').addEventListener('click',function(e){
+            e.stopPropagation();
+            if(!confirm('Delete session "'+sess.name+'"?'))return;
+            trData().programs[pi].sessions.splice(si,1);scheduleSave();renderProgramList();
+          });
+          if(sessOpen){
+            sessCard.querySelectorAll('.routine-ex-inp').forEach(function(inp){
+              inp.addEventListener('change',function(){
+                var p=parseInt(inp.dataset.pi),s2=parseInt(inp.dataset.si),r=parseInt(inp.dataset.rei),f=inp.dataset.f;
+                trData().programs[p].sessions[s2].exercises[r][f]=inp.value;scheduleSave();
+              });
+            });
+            sessCard.querySelectorAll('[data-del-ex-pi]').forEach(function(btn){
+              btn.addEventListener('click',function(){
+                var p=parseInt(btn.dataset.delExPi),s2=parseInt(btn.dataset.delExSi),r=parseInt(btn.dataset.delExRei);
+                trData().programs[p].sessions[s2].exercises.splice(r,1);scheduleSave();renderProgramList();
+              });
+            });
+          }
+        });
+      }
+      card.appendChild(body);
     }
-    card.innerHTML=hdrHtml+bodyHtml;
+
     listEl.appendChild(card);
 
-    card.querySelector('[data-rcard]').addEventListener('click',function(e){
-      if(e.target.closest('button')||e.target.closest('input'))return;
-      _trRoutineOpen[routine.id]=!_trRoutineOpen[routine.id];renderRoutineList();
+    // Program header events
+    progHdr.addEventListener('click',function(e){
+      if(e.target.closest('button'))return;
+      _trProgramOpen[prog.id]=!_trProgramOpen[prog.id];renderProgramList();
     });
-    card.querySelector('[data-add-ex-to]').addEventListener('click',function(){showAddExToRoutine(ri);});
-    card.querySelector('[data-del-routine]').addEventListener('click',function(){
-      if(!confirm('Delete "'+routine.name+'"?'))return;
-      trData().routines.splice(ri,1);scheduleSave();renderRoutineList();
+    progHdr.querySelector('[data-add-sess]').addEventListener('click',function(e){
+      e.stopPropagation();showAddSessionModal(pi);
     });
-    if(open){
-      card.querySelectorAll('[data-del-re]').forEach(function(btn){
-        btn.addEventListener('click',function(){
-          var ri2=parseInt(btn.dataset.ri),rei=parseInt(btn.dataset.delRe);
-          trData().routines[ri2].exercises.splice(rei,1);scheduleSave();renderRoutineList();
-        });
-      });
-      card.querySelectorAll('.routine-ex-inp').forEach(function(inp){
-        inp.addEventListener('change',function(){
-          var ri2=parseInt(inp.dataset.ri),rei=parseInt(inp.dataset.rei),f=inp.dataset.f;
-          trData().routines[ri2].exercises[rei][f]=inp.value;scheduleSave();
-        });
-      });
-    }
+    progHdr.querySelector('[data-del-prog]').addEventListener('click',function(e){
+      e.stopPropagation();
+      if(!confirm('Delete program "'+prog.name+'"? All its sessions will be removed.'))return;
+      trData().programs.splice(pi,1);scheduleSave();renderProgramList();
+    });
   });
 }
 
-function showAddRoutineModal(){
+function showAddProgramModal(){
   var overlay=document.createElement('div');overlay.className='tr-modal-overlay';
   overlay.innerHTML='<div class="tr-modal">'+
-    '<div class="tr-modal-title"><i class="ti ti-list-check"></i>New routine</div>'+
-    '<div class="tr-field"><label class="tr-label">Routine name *</label><input class="tr-inp" id="rn-name" placeholder="e.g. Push Day"></div>'+
+    '<div class="tr-modal-title"><i class="ti ti-trophy"></i>New training program</div>'+
+    '<div class="tr-field"><label class="tr-label">Program name *</label><input class="tr-inp" id="ap-name" placeholder="e.g. 3-Day Split, PPL, Full Body"></div>'+
     '<div class="tr-modal-actions">'+
-    '<button class="tr-btn" id="rn-cancel">Cancel</button>'+
-    '<button class="tr-btn tr-btn-primary" id="rn-save">Create</button>'+
+    '<button class="tr-btn" id="ap-cancel">Cancel</button>'+
+    '<button class="tr-btn tr-btn-primary" id="ap-save">Create</button>'+
     '</div></div>';
   document.body.appendChild(overlay);
-  overlay.querySelector('#rn-cancel').addEventListener('click',function(){document.body.removeChild(overlay);});
-  overlay.querySelector('#rn-save').addEventListener('click',function(){
-    var name=(overlay.querySelector('#rn-name').value||'').trim();if(!name)return;
-    var r={id:'r_'+Date.now(),name:name,exercises:[]};
-    trData().routines.push(r);_trRoutineOpen[r.id]=true;scheduleSave();document.body.removeChild(overlay);renderRoutineList();
+  var nameEl=overlay.querySelector('#ap-name');
+  nameEl.focus();
+  overlay.querySelector('#ap-cancel').addEventListener('click',function(){document.body.removeChild(overlay);});
+  overlay.querySelector('#ap-save').addEventListener('click',function(){
+    var name=nameEl.value.trim();if(!name)return;
+    var prog={id:'prog_'+Date.now(),name:name,sessions:[]};
+    trData().programs.push(prog);_trProgramOpen[prog.id]=true;scheduleSave();document.body.removeChild(overlay);renderProgramList();
   });
+  nameEl.addEventListener('keydown',function(e){if(e.key==='Enter')overlay.querySelector('#ap-save').click();});
 }
 
-function showAddExToRoutine(ri){
+function showAddSessionModal(pi){
+  var overlay=document.createElement('div');overlay.className='tr-modal-overlay';
+  overlay.innerHTML='<div class="tr-modal">'+
+    '<div class="tr-modal-title"><i class="ti ti-list-check"></i>Add session to program</div>'+
+    '<div class="tr-field"><label class="tr-label">Session name *</label><input class="tr-inp" id="as-name" placeholder="e.g. Push Day, Pull Day, Legs, Day A"></div>'+
+    '<div class="tr-modal-actions">'+
+    '<button class="tr-btn" id="as-cancel">Cancel</button>'+
+    '<button class="tr-btn tr-btn-primary" id="as-save">Add</button>'+
+    '</div></div>';
+  document.body.appendChild(overlay);
+  var nameEl=overlay.querySelector('#as-name');
+  nameEl.focus();
+  overlay.querySelector('#as-cancel').addEventListener('click',function(){document.body.removeChild(overlay);});
+  overlay.querySelector('#as-save').addEventListener('click',function(){
+    var name=nameEl.value.trim();if(!name)return;
+    var sess={id:'sess_'+Date.now(),name:name,exercises:[]};
+    if(!trData().programs[pi].sessions)trData().programs[pi].sessions=[];
+    trData().programs[pi].sessions.push(sess);_trSessionOpen[sess.id]=true;scheduleSave();document.body.removeChild(overlay);renderProgramList();
+  });
+  nameEl.addEventListener('keydown',function(e){if(e.key==='Enter')overlay.querySelector('#as-save').click();});
+}
+
+function showAddExToSession(pi,si){
   var td=trData();
   var all=td.exercises;
-  if(!all.length){alert('No exercises saved yet. Search and save exercises in the Exercise Library first.');return;}
+  if(!all.length){alert('No exercises saved yet. Go to the Exercise Library tab, search and save exercises first.');return;}
   var overlay=document.createElement('div');overlay.className='tr-modal-overlay';
   var opts=all.map(function(ex){return '<option value="'+ex.id+'">'+esc(ex.name)+(ex.custom?' (custom)':'')+'</option>';}).join('');
   overlay.innerHTML='<div class="tr-modal">'+
-    '<div class="tr-modal-title"><i class="ti ti-plus"></i>Add exercise to routine</div>'+
+    '<div class="tr-modal-title"><i class="ti ti-plus"></i>Add exercise to session</div>'+
     '<div class="tr-field"><label class="tr-label">Exercise</label><select class="tr-inp" id="ae-ex">'+opts+'</select></div>'+
     '<div class="tr-field" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
     '<div><label class="tr-label">Sets</label><input class="tr-inp" id="ae-sets" type="number" min="1" max="99" placeholder="3"></div>'+
@@ -1125,47 +1234,52 @@ function showAddExToRoutine(ri){
     var ex=td.exercises.find(function(e){return e.id===exId;});
     if(!ex)return;
     var re={exId:exId,name:ex.name,sets:overlay.querySelector('#ae-sets').value,reps:overlay.querySelector('#ae-reps').value,weight:overlay.querySelector('#ae-weight').value};
-    trData().routines[ri].exercises.push(re);scheduleSave();document.body.removeChild(overlay);renderRoutineList();
+    if(!trData().programs[pi].sessions[si].exercises)trData().programs[pi].sessions[si].exercises=[];
+    trData().programs[pi].sessions[si].exercises.push(re);scheduleSave();document.body.removeChild(overlay);renderProgramList();
   });
 }
 
 // ── SESSION LOG ──
 function renderSessions(cont){
   var td=trData();
-  var html='<div class="tr-section-title">Log a workout</div>';
+  // Flatten all sessions across all programs for the dropdown
+  var allSessions=[];
+  (td.programs||[]).forEach(function(prog){
+    (prog.sessions||[]).forEach(function(sess){
+      allSessions.push({progName:prog.name,sessId:sess.id,sessName:sess.name,exercises:sess.exercises||[]});
+    });
+  });
 
-  if(!td.routines.length){
-    html+='<div class="tr-empty">Build a routine first in the Routine Builder tab, then log sessions here.</div>';
+  var html='<div class="tr-section-title">Log a workout</div>';
+  if(!allSessions.length){
+    html+='<div class="tr-empty">Build a program with sessions in the Routine Builder tab first, then log workouts here.</div>';
     cont.innerHTML=html;return;
   }
 
-  // Routine selector
-  var routineOpts=td.routines.map(function(r,i){return '<option value="'+i+'">'+esc(r.name)+'</option>';}).join('');
-  html+='<select class="tr-select" id="sl-routine">'+routineOpts+'</select>';
+  var opts=allSessions.map(function(s,i){return '<option value="'+i+'">'+esc(s.progName)+' — '+esc(s.sessName)+'</option>';}).join('');
+  html+='<select class="tr-select" id="sl-sess">'+opts+'</select>';
   html+='<div id="sl-ex-form" class="session-log-form"></div>';
   html+='<div class="tr-field"><label class="tr-label">Note (optional)</label><textarea class="tr-textarea" id="sl-note" placeholder="How did it go?"></textarea></div>';
   html+='<button class="tr-btn tr-btn-primary" id="sl-log" style="margin-bottom:16px"><i class="ti ti-check"></i>Log session</button>';
   html+='<div class="tr-divider"></div>'+
     '<div class="tr-section-title">Session history</div>'+
     '<div id="tr-session-list" class="session-list"></div>';
-
   cont.innerHTML=html;
 
-  // Build exercise form for selected routine
   function buildExForm(){
-    var ri=parseInt(document.getElementById('sl-routine').value)||0;
-    var routine=td.routines[ri];
+    var idx=parseInt(document.getElementById('sl-sess').value)||0;
+    var s=allSessions[idx];
     var form=document.getElementById('sl-ex-form');
-    if(!routine||!routine.exercises.length){form.innerHTML='<div class="tr-empty" style="padding:.5rem 0">This routine has no exercises.</div>';return;}
+    if(!s||!s.exercises.length){form.innerHTML='<div class="tr-empty" style="padding:.5rem 0">This session has no exercises yet. Add some in the Routine Builder.</div>';return;}
     var hdrs='<div class="session-log-ex" style="margin-bottom:3px">'+
       '<div style="font-size:10px;color:var(--text-tertiary)">Exercise</div>'+
       '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Sets</div>'+
       '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Reps</div>'+
-      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Weight</div>'+
+      '<div style="font-size:10px;color:var(--text-tertiary);text-align:center">Weight (kg)</div>'+
       '</div>';
-    var rows=routine.exercises.map(function(re,rei){
+    var rows=s.exercises.map(function(re,rei){
       return '<div class="session-log-ex">'+
-        '<div style="font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(re.name)+'</div>'+
+        '<div style="font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(re.name)+'">'+esc(re.name)+'</div>'+
         '<input class="routine-ex-inp" type="number" min="1" max="99" placeholder="'+esc(re.sets||'3')+'" data-sl-rei="'+rei+'" data-sl-f="sets" style="text-align:center">'+
         '<input class="routine-ex-inp" type="number" min="1" max="999" placeholder="'+esc(re.reps||'10')+'" data-sl-rei="'+rei+'" data-sl-f="reps" style="text-align:center">'+
         '<input class="routine-ex-inp" type="number" min="0" max="9999" step="0.5" placeholder="'+esc(re.weight||'0')+'" data-sl-rei="'+rei+'" data-sl-f="weight" style="text-align:center">'+
@@ -1174,23 +1288,25 @@ function renderSessions(cont){
     form.innerHTML=hdrs+rows;
   }
   buildExForm();
-  document.getElementById('sl-routine').addEventListener('change',buildExForm);
+  document.getElementById('sl-sess').addEventListener('change',buildExForm);
 
-  // Log session
   document.getElementById('sl-log').addEventListener('click',function(){
-    var ri=parseInt(document.getElementById('sl-routine').value)||0;
-    var routine=td.routines[ri];
-    if(!routine)return;
-    var exercises=routine.exercises.map(function(re,rei){
+    var idx=parseInt(document.getElementById('sl-sess').value)||0;
+    var s=allSessions[idx];
+    if(!s)return;
+    var exercises=s.exercises.map(function(re,rei){
       var sets=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="sets"]');
       var reps=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="reps"]');
       var weight=document.querySelector('[data-sl-rei="'+rei+'"][data-sl-f="weight"]');
-      return {exId:re.exId,name:re.name,sets:(sets&&sets.value)||re.sets||'',reps:(reps&&reps.value)||re.reps||'',weight:(weight&&weight.value)||re.weight||''};
+      return {exId:re.exId,name:re.name,
+        sets:(sets&&sets.value)||re.sets||'',
+        reps:(reps&&reps.value)||re.reps||'',
+        weight:(weight&&weight.value)||re.weight||''};
     });
     var note=(document.getElementById('sl-note').value||'').trim();
-    var session={id:'s_'+Date.now(),routineId:routine.id,routineName:routine.name,date:new Date().toISOString(),exercises:exercises,note:note};
+    var session={id:'s_'+Date.now(),sessId:s.sessId,sessName:s.sessName,progName:s.progName,date:new Date().toISOString(),exercises:exercises,note:note};
+    if(!td.sessions)td.sessions=[];
     td.sessions.unshift(session);scheduleSave();
-    // Reset form
     document.getElementById('sl-note').value='';
     buildExForm();
     renderSessionList();
@@ -1203,28 +1319,28 @@ function renderSessionList(){
   var td=trData();
   var listEl=document.getElementById('tr-session-list');
   if(!listEl)return;
-  if(!td.sessions.length){listEl.innerHTML='<div class="tr-empty">No sessions logged yet.</div>';return;}
-
-  // Group by routine for progression view; show flat list with progression hints
-  listEl.innerHTML=td.sessions.slice(0,30).map(function(s){
+  if(!td.sessions||!td.sessions.length){listEl.innerHTML='<div class="tr-empty">No sessions logged yet.</div>';return;}
+  listEl.innerHTML=td.sessions.slice(0,40).map(function(s){
     var dateStr=new Date(s.date).toLocaleDateString('en-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-    var exRows=s.exercises.map(function(e){
-      // Find previous best for this exercise
+    var exRows=(s.exercises||[]).map(function(e){
+      // Find progression: previous logged value for same exercise in an earlier session
       var prev=null;
       for(var i=1;i<td.sessions.length;i++){
-        var ps=td.sessions[i];
-        var pe=ps.exercises&&ps.exercises.find(function(pe){return pe.exId===e.exId;});
+        var pe=(td.sessions[i].exercises||[]).find(function(pe){return pe.exId===e.exId;});
         if(pe&&pe.weight&&parseFloat(pe.weight)>0){prev=pe;break;}
       }
       var trend='';
-      if(prev&&e.weight&&parseFloat(e.weight)>parseFloat(prev.weight)){trend='<span style="color:var(--text-success);font-size:10px"> ▲ +'+((parseFloat(e.weight)-parseFloat(prev.weight)).toFixed(1))+'kg</span>';}
-      else if(prev&&e.weight&&parseFloat(e.weight)<parseFloat(prev.weight)){trend='<span style="color:var(--text-danger);font-size:10px"> ▼</span>';}
-      return '<div class="session-ex-row"><span style="color:var(--text-primary)">'+esc(e.name)+'</span><span>'+
-        (e.sets?e.sets+'×':'')+''+(e.reps?e.reps+' reps':'')+''+(e.weight&&parseFloat(e.weight)>0?' @ '+parseFloat(e.weight)+'kg':'')+trend+'</span></div>';
+      if(prev&&e.weight&&parseFloat(e.weight)>parseFloat(prev.weight))
+        trend='<span style="color:var(--text-success);font-size:10px"> ▲ +'+(parseFloat(e.weight)-parseFloat(prev.weight)).toFixed(1)+'kg</span>';
+      else if(prev&&e.weight&&parseFloat(e.weight)<parseFloat(prev.weight))
+        trend='<span style="color:var(--text-danger);font-size:10px"> ▼</span>';
+      var detail=[e.sets?e.sets+'×':'',e.reps?e.reps+' reps':'',e.weight&&parseFloat(e.weight)>0?'@ '+parseFloat(e.weight)+'kg':''].filter(Boolean).join(' ');
+      return '<div class="session-ex-row"><span style="color:var(--text-primary)">'+esc(e.name)+'</span><span>'+detail+trend+'</span></div>';
     }).join('');
     return '<div class="session-card">'+
       '<div class="session-date">'+dateStr+'</div>'+
-      '<div class="session-routine-name"><i class="ti ti-barbell" style="font-size:13px;color:var(--text-secondary)"></i>'+esc(s.routineName)+'</div>'+
+      '<div class="session-routine-name"><i class="ti ti-barbell" style="font-size:13px;color:var(--text-secondary)"></i>'+
+      esc(s.progName||'')+' — '+esc(s.sessName||s.routineName||'')+'</div>'+
       '<div class="session-ex-rows">'+exRows+'</div>'+
       (s.note?'<div class="session-note">'+esc(s.note)+'</div>':'')+
       '</div>';
