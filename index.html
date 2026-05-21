@@ -354,7 +354,9 @@ onAuthStateChanged(auth, async (user) => {
     if(window._appData.showGuide===undefined)window._appData.showGuide=false;
     window._appData.showTrain=false;
     if(!window._appData.training)window._appData.training={exercises:[],programs:[],sessions:[]};
-    if(!window._appData.training.programs){window._appData.training.programs=window._appData.training.routines?[{id:'prog_migrated',name:'My Program',sessions:window._appData.training.routines.map(function(r){return {id:r.id,name:r.name,exercises:r.exercises||[]};})]:[];}if(!window._appData.training.sessions)window._appData.training.sessions=[];if(!window._appData.training.exercises)window._appData.training.exercises=[];
+    if(!window._appData.training.programs){var _mr=window._appData.training.routines;window._appData.training.programs=(_mr&&_mr.length)?[{id:'prog_migrated',name:'My Program',sessions:_mr.map(function(r){return {id:r.id,name:r.name,exercises:r.exercises||[]};})}]:[];}
+    if(!window._appData.training.sessions)window._appData.training.sessions=[];
+    if(!window._appData.training.exercises)window._appData.training.exercises=[];
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     render();
