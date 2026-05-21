@@ -80,9 +80,9 @@
   /* ── Header ── */
   .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; gap: 16px; flex-wrap: wrap; }
   .app-logo { display: flex; align-items: center; gap: 14px; }
-  .app-logo img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(167,139,250,0.35)); }
+  .app-logo img { width: 88px; height: 88px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(167,139,250,0.35)); }
   .app-logo-text { display: flex; flex-direction: column; }
-  .app-logo-name { font-size: 30px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; letter-spacing: -0.5px; }
+  .app-logo-name { font-size: 26px; font-weight: 800; background: linear-gradient(90deg,#60c8f5,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; letter-spacing: -0.5px; }
   .app-logo-sub { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.12em; margin-top: 3px; font-weight: 500; }
   .top-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .icon-btn { border: 0.5px solid var(--border-s); border-radius: var(--radius-md); background: transparent; color: var(--text-secondary); padding: 7px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
@@ -200,8 +200,8 @@
 
   @media (max-width: 560px) {
     body { padding: 1rem .625rem; }
-    .app-logo img { width: 52px; height: 52px; }
-    .app-logo-name { font-size: 22px; }
+    .app-logo img { width: 64px; height: 64px; }
+    .app-logo-name { font-size: 19px; }
     .col-headers, .day-row { grid-template-columns: 44px 1fr 1fr 1fr 24px; }
     .col-hdr:nth-child(5), .vs-goal-cell { display: none; }
     .period-header { flex-direction: column; align-items: flex-start; }
@@ -688,7 +688,7 @@ function render(){
   var app=document.getElementById('app');app.innerHTML='';
 
   var hdr=document.createElement('div');hdr.className='app-header';
-  hdr.innerHTML='<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72" width="84" height="84"><div class="app-logo-text"><div class="app-logo-name">H72</div><div class="app-logo-sub">PROGRESS</div></div></div>'+
+  hdr.innerHTML='<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72" width="84" height="84"><div class="app-logo-text"><div class="app-logo-name">H72 Progress</div></div></div>'+
     '<div class="top-btns">'+
     '<button class="icon-btn'+(data.showDash?' active':'')+'" id="toggle-dash"><i class="ti ti-layout-dashboard"></i>Dashboard</button>'+
     '<button class="icon-btn'+(data.showGuide?' active':'')+'" id="toggle-guide"><i class="ti ti-book"></i>Guide</button>'+
