@@ -63,6 +63,13 @@
   .auth-btn:hover { opacity: 0.9; } .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .auth-error { font-size: 12px; color: var(--text-danger); background: var(--bg-danger); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 10px; display: none; }
   .auth-error.show { display: block; }
+  /* Demo button */
+  .auth-demo-row { width: 100%; max-width: 360px; margin-top: 10px; }
+  .auth-demo-btn { width: 100%; height: 40px; border-radius: var(--radius-md); background: transparent; border: 0.5px solid var(--border-t); color: var(--text-tertiary); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 7px; }
+  .auth-demo-btn:hover { background: var(--bg-secondary); color: var(--text-secondary); border-color: var(--border-s); }
+  /* Demo banner inside app */
+  .demo-banner { background: linear-gradient(90deg,rgba(245,158,11,0.12),rgba(167,139,250,0.10)); border: 0.5px solid rgba(245,158,11,0.5); border-radius: var(--radius-md); padding: 8px 12px; font-size: 12px; color: var(--text-warning); display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .demo-exit-btn { margin-left: auto; border: 0.5px solid currentColor; border-radius: var(--radius-md); background: transparent; color: inherit; font-size: 11px; font-weight: 600; padding: 3px 10px; cursor: pointer; font-family: inherit; white-space: nowrap; }
   /* Feature cards — always visible, stacked below form */
   .auth-features { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 8px; margin-top: 1.75rem; }
   .feature-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: 12px; padding: .85rem 1rem; display: flex; align-items: flex-start; gap: 12px; }
@@ -308,6 +315,11 @@
     <button class="auth-cta-btn secondary" id="cta-signup" onclick="openAuthForm('signup')">Create account</button>
   </div>
 
+  <!-- Demo button -->
+  <div class="auth-demo-row">
+    <button class="auth-demo-btn" onclick="launchDemo()"><i class="ti ti-eye" style="font-size:15px"></i>View demo — no account needed</button>
+  </div>
+
   <!-- Collapsible form -->
   <div class="auth-form-panel" id="auth-form-panel">
     <div class="auth-form-title" id="auth-form-title">Sign in to H72</div>
@@ -483,7 +495,7 @@ function setSyncState(s){var d=document.getElementById('sync-dot');if(!d)return;
 var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 var chartWeightInst=null,chartStepsInst=null;
 var saveTimer=null;
-function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(function(){if(window._saveToFirebase&&window._appData)window._saveToFirebase(window._appData);},1200);}
+function scheduleSave(){if(window._demoMode)return;if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(function(){if(window._saveToFirebase&&window._appData)window._saveToFirebase(window._appData);},1200);}
 
 function addDays(s,n){var d=new Date(s);d.setDate(d.getDate()+n);return d}
 function fmtDate(d){return d.toLocaleDateString('en-SE',{day:'numeric',month:'short'})}
@@ -737,8 +749,13 @@ function render(){
     '<button class="icon-btn'+(data.showTrain?' active':'')+'" id="toggle-train"><i class="ti ti-barbell"></i>Training</button>'+
     '<button class="icon-btn'+(data.showSettings?' active':'')+'" id="toggle-settings"><i class="ti ti-settings"></i>Settings</button>'+
     '<span id="sync-dot" class="sync-dot" title="Saved"></span>'+
-    '<button class="signout-btn" id="signout-btn" title="Sign out"><i class="ti ti-logout"></i></button>'+
+    '<button class="signout-btn" id="signout-btn" title="'+(window._demoMode?'Exit demo':'Sign out')+'"><i class="ti ti-'+(window._demoMode?'x':'logout')+'"></i>'+(window._demoMode?' Exit demo':'')+'</button>'+
     '</div>';
+  if(window._demoMode){
+    var banner=document.createElement('div');banner.className='demo-banner';
+    banner.innerHTML='<i class="ti ti-eye" style="font-size:15px;flex-shrink:0"></i><span><strong>Demo mode</strong> — this is sample data. Nothing is saved.</span><button class="demo-exit-btn" onclick="exitDemo()">Exit demo</button>';
+    app.appendChild(banner);
+  }
   app.appendChild(hdr);
 
   if(data.showSettings){
@@ -831,7 +848,7 @@ function render(){
   document.getElementById('toggle-guide').addEventListener('click',function(){data.showGuide=!data.showGuide;render()});
   document.getElementById('toggle-train').addEventListener('click',function(){data.showTrain=!data.showTrain;render()});
   document.getElementById('toggle-settings').addEventListener('click',function(){data.showSettings=!data.showSettings;render()});
-  document.getElementById('signout-btn').addEventListener('click',function(){if(window._signOut)window._signOut()});
+  document.getElementById('signout-btn').addEventListener('click',function(){if(window._demoMode){exitDemo();}else if(window._signOut){window._signOut();}});
   var ss=document.getElementById('save-settings');
   if(ss)ss.addEventListener('click',function(){
     var n=document.getElementById('inp-name').value.trim(),dv=document.getElementById('inp-date').value;
@@ -2181,6 +2198,125 @@ function renderSessionList(){
       '</div>';
   }).join('');
 }
+
+window._demoMode=false;
+window.exitDemo=function(){
+  window._demoMode=false;
+  window._appData=null;
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+};
+window.launchDemo=function(){
+  window._demoMode=true;
+  var start='2025-02-03';
+  function wk(days,collapsed){return{collapsed:collapsed!==false,days:days.map(function(d){return{day:d[0],weight:d[1]||'',calories:d[2]||'',steps:d[3]||''};})};}
+  var periods=[
+    {goal:'deficit',calGoal:2100,stepGoal:9000,weeks:[
+      wk([['Mon','90.2','2050','9200'],['Tue','90.0','1980','10100'],['Wed','90.3','2150','8700'],['Thu','89.8','1920','9500'],['Fri','89.6','2200','11200'],['Sat','89.9','2400','7800'],['Sun','90.1','2100','6500']],false),
+      wk([['Mon','89.5','1990','9800'],['Tue','89.3','2050','10300'],['Wed','89.7','2080','9100'],['Thu','89.1','1950','9700'],['Fri','88.9','2150','10500'],['Sat','89.2','2300','8200'],['Sun','89.4','1980','7100']]),
+      wk([['Mon','88.8','2010','10200'],['Tue','88.5','1970','10800'],['Wed','88.7','2090','9600'],['Thu','88.3','1930','10100'],['Fri','88.0','2200','11500'],['Sat','88.4','2350','8400'],['Sun','88.6','2050','6900']]),
+      wk([['Mon','87.9','1980','10500'],['Tue','87.6','2020','11200'],['Wed','87.8','2060','9900'],['Thu','87.4','1900','10800'],['Fri','87.1','2180','12100'],['Sat','87.5','2280','9100'],['Sun','87.7','2000','7400']])
+    ]},
+    {goal:'deficit',calGoal:2000,stepGoal:10000,weeks:[
+      wk([['Mon','87.0','1950','10800'],['Tue','86.8','2000','11500'],['Wed','87.1','2080','10200'],['Thu','86.6','1870','11000'],['Fri','86.3','2150','12300'],['Sat','86.7','2200','9500'],['Sun','86.9','1980','8200']]),
+      wk([['Mon','86.2','1920','11200'],['Tue','85.9','1980','12000'],['Wed','86.1','2050','10700'],['Thu','85.7','1850','11800'],['Fri','85.4','2100','13100'],['Sat','85.8','2180','10200'],['Sun','86.0','1960','8600']]),
+      wk([['Mon','85.3','1900','11500'],['Tue','85.0','1960','12500'],['Wed','85.2','2030','11100'],['Thu','84.8','1830','12200'],['Fri','84.5','2080','13500'],['Sat','84.9','2150','10800'],['Sun','85.1','1940','9000']]),
+      wk([['Mon','84.4','1880','12000'],['Tue','84.1','1940','13200'],['Wed','84.3','2010','11800'],['Thu','83.9','1810','12700'],['Fri','83.6','2060','14100'],['Sat','84.0','2100','11200'],['Sun','84.2','1920','9400']])
+    ]},
+    {goal:'maintain',calGoal:2200,stepGoal:10000,weeks:[
+      wk([['Mon','83.5','2180','12200'],['Tue','83.3','2200','13500'],['Wed','83.6','2250','12000'],['Thu','83.2','2100','13000'],['Fri','82.9','2300','14500'],['Sat','83.3','2500','11500'],['Sun','83.5','2200','9800']]),
+      wk([['Mon','83.1','2150','12500'],['Tue','82.9','2200','13800'],['Wed','83.2','2230','12300'],['Thu','82.8','2080','13400'],['Fri','82.5','2280','15000'],['Sat','83.0','2450','12000'],['Sun','83.2','2180','10200']]),
+      wk([['Mon','82.8','2160','13000'],['Tue','82.6','2190','14200'],['Wed','82.9','2210','12800'],['Thu','82.5','2050','13800'],['Fri','82.2','2260','15500'],['Sat','82.7','2400','12500'],['Sun','82.9','2150','10800']]),
+      wk([['Mon','82.4','2140','13500'],['Tue','82.2','2180','14800'],['Wed','82.5','2200','13200'],['Thu','82.1','2030','14300'],['Fri','','',''],['Sat','','',''],['Sun','','','']])
+    ]}
+  ];
+  var demoSessions=[
+    {id:'ds1',date:'2025-02-05',workoutTitle:'Push Day',imported:false,totalVolume:8420,exercises:[
+      {exId:'bench',name:'Bench Press',weight:'80',sets:'4',reps:'8',setDetail:[{weight:'80',reps:'8',setType:'normal'},{weight:'80',reps:'8',setType:'normal'},{weight:'80',reps:'7',setType:'normal'},{weight:'80',reps:'6',setType:'normal'}]},
+      {exId:'ohp',name:'Overhead Press',weight:'55',sets:'3',reps:'10',setDetail:[{weight:'55',reps:'10',setType:'normal'},{weight:'55',reps:'9',setType:'normal'},{weight:'55',reps:'8',setType:'normal'}]},
+      {exId:'dips',name:'Dips',weight:'',sets:'3',reps:'12',setDetail:[{weight:'',reps:'12',setType:'normal'},{weight:'',reps:'11',setType:'normal'},{weight:'',reps:'10',setType:'normal'}]}
+    ]},
+    {id:'ds2',date:'2025-02-07',workoutTitle:'Pull Day',imported:false,totalVolume:9180,exercises:[
+      {exId:'deadlift',name:'Deadlift',weight:'120',sets:'4',reps:'5',setDetail:[{weight:'120',reps:'5',setType:'normal'},{weight:'120',reps:'5',setType:'normal'},{weight:'120',reps:'5',setType:'normal'},{weight:'120',reps:'4',setType:'normal'}]},
+      {exId:'row',name:'Barbell Row',weight:'75',sets:'4',reps:'8',setDetail:[{weight:'75',reps:'8',setType:'normal'},{weight:'75',reps:'8',setType:'normal'},{weight:'75',reps:'7',setType:'normal'},{weight:'75',reps:'7',setType:'normal'}]},
+      {exId:'pullup',name:'Pull-Up',weight:'',sets:'3',reps:'8',setDetail:[{weight:'',reps:'8',setType:'normal'},{weight:'',reps:'7',setType:'normal'},{weight:'',reps:'6',setType:'normal'}]}
+    ]},
+    {id:'ds3',date:'2025-02-12',workoutTitle:'Push Day',imported:false,totalVolume:8960,exercises:[
+      {exId:'bench',name:'Bench Press',weight:'82.5',sets:'4',reps:'8',setDetail:[{weight:'82.5',reps:'8',setType:'normal'},{weight:'82.5',reps:'8',setType:'normal'},{weight:'82.5',reps:'7',setType:'normal'},{weight:'82.5',reps:'6',setType:'normal'}]},
+      {exId:'ohp',name:'Overhead Press',weight:'57.5',sets:'3',reps:'10',setDetail:[{weight:'57.5',reps:'10',setType:'normal'},{weight:'57.5',reps:'9',setType:'normal'},{weight:'57.5',reps:'8',setType:'normal'}]},
+      {exId:'incline',name:'Incline Dumbbell Press',weight:'32',sets:'3',reps:'12',setDetail:[{weight:'32',reps:'12',setType:'normal'},{weight:'32',reps:'11',setType:'normal'},{weight:'32',reps:'10',setType:'normal'}]}
+    ]},
+    {id:'ds4',date:'2025-02-19',workoutTitle:'Leg Day',imported:false,totalVolume:14200,exercises:[
+      {exId:'squat',name:'Back Squat',weight:'100',sets:'4',reps:'6',setDetail:[{weight:'100',reps:'6',setType:'normal'},{weight:'100',reps:'6',setType:'normal'},{weight:'100',reps:'5',setType:'normal'},{weight:'100',reps:'5',setType:'normal'}]},
+      {exId:'legpress',name:'Leg Press',weight:'160',sets:'4',reps:'10',setDetail:[{weight:'160',reps:'10',setType:'normal'},{weight:'160',reps:'10',setType:'normal'},{weight:'160',reps:'9',setType:'normal'},{weight:'160',reps:'8',setType:'normal'}]},
+      {exId:'rdl',name:'Romanian Deadlift',weight:'80',sets:'3',reps:'10',setDetail:[{weight:'80',reps:'10',setType:'normal'},{weight:'80',reps:'10',setType:'normal'},{weight:'80',reps:'9',setType:'normal'}]}
+    ]},
+    {id:'ds5',date:'2025-03-05',workoutTitle:'Push Day',imported:false,totalVolume:9750,exercises:[
+      {exId:'bench',name:'Bench Press',weight:'85',sets:'4',reps:'8',setDetail:[{weight:'85',reps:'8',setType:'normal'},{weight:'85',reps:'8',setType:'normal'},{weight:'85',reps:'7',setType:'normal'},{weight:'85',reps:'6',setType:'normal'}]},
+      {exId:'ohp',name:'Overhead Press',weight:'60',sets:'3',reps:'10',setDetail:[{weight:'60',reps:'10',setType:'normal'},{weight:'60',reps:'9',setType:'normal'},{weight:'60',reps:'8',setType:'normal'}]},
+      {exId:'incline',name:'Incline Dumbbell Press',weight:'34',sets:'3',reps:'12',setDetail:[{weight:'34',reps:'12',setType:'normal'},{weight:'34',reps:'11',setType:'normal'},{weight:'34',reps:'10',setType:'normal'}]}
+    ]},
+    {id:'ds6',date:'2025-03-12',workoutTitle:'Pull Day',imported:false,totalVolume:10340,exercises:[
+      {exId:'deadlift',name:'Deadlift',weight:'127.5',sets:'4',reps:'5',setDetail:[{weight:'127.5',reps:'5',setType:'normal'},{weight:'127.5',reps:'5',setType:'normal'},{weight:'127.5',reps:'5',setType:'normal'},{weight:'127.5',reps:'5',setType:'normal'}]},
+      {exId:'row',name:'Barbell Row',weight:'80',sets:'4',reps:'8',setDetail:[{weight:'80',reps:'8',setType:'normal'},{weight:'80',reps:'8',setType:'normal'},{weight:'80',reps:'8',setType:'normal'},{weight:'80',reps:'7',setType:'normal'}]},
+      {exId:'pullup',name:'Pull-Up',weight:'',sets:'3',reps:'9',setDetail:[{weight:'',reps:'9',setType:'normal'},{weight:'',reps:'8',setType:'normal'},{weight:'',reps:'8',setType:'normal'}]}
+    ]},
+    {id:'ds7',date:'2025-04-02',workoutTitle:'Push Day',imported:false,totalVolume:10800,exercises:[
+      {exId:'bench',name:'Bench Press',weight:'87.5',sets:'4',reps:'8',setDetail:[{weight:'87.5',reps:'8',setType:'normal'},{weight:'87.5',reps:'8',setType:'normal'},{weight:'87.5',reps:'8',setType:'normal'},{weight:'87.5',reps:'7',setType:'normal'}]},
+      {exId:'ohp',name:'Overhead Press',weight:'62.5',sets:'3',reps:'10',setDetail:[{weight:'62.5',reps:'10',setType:'normal'},{weight:'62.5',reps:'10',setType:'normal'},{weight:'62.5',reps:'9',setType:'normal'}]},
+      {exId:'incline',name:'Incline Dumbbell Press',weight:'36',sets:'3',reps:'12',setDetail:[{weight:'36',reps:'12',setType:'normal'},{weight:'36',reps:'12',setType:'normal'},{weight:'36',reps:'11',setType:'normal'}]}
+    ]},
+    {id:'ds8',date:'2025-04-09',workoutTitle:'Leg Day',imported:false,totalVolume:15900,exercises:[
+      {exId:'squat',name:'Back Squat',weight:'107.5',sets:'4',reps:'6',setDetail:[{weight:'107.5',reps:'6',setType:'normal'},{weight:'107.5',reps:'6',setType:'normal'},{weight:'107.5',reps:'6',setType:'normal'},{weight:'107.5',reps:'5',setType:'normal'}]},
+      {exId:'legpress',name:'Leg Press',weight:'180',sets:'4',reps:'10',setDetail:[{weight:'180',reps:'10',setType:'normal'},{weight:'180',reps:'10',setType:'normal'},{weight:'180',reps:'10',setType:'normal'},{weight:'180',reps:'9',setType:'normal'}]},
+      {exId:'rdl',name:'Romanian Deadlift',weight:'85',sets:'3',reps:'10',setDetail:[{weight:'85',reps:'10',setType:'normal'},{weight:'85',reps:'10',setType:'normal'},{weight:'85',reps:'10',setType:'normal'}]}
+    ]},
+    {id:'ds9',date:'2025-05-07',workoutTitle:'Push Day',imported:false,totalVolume:11760,exercises:[
+      {exId:'bench',name:'Bench Press',weight:'90',sets:'4',reps:'8',setDetail:[{weight:'90',reps:'8',setType:'normal'},{weight:'90',reps:'8',setType:'normal'},{weight:'90',reps:'8',setType:'normal'},{weight:'90',reps:'7',setType:'normal'}]},
+      {exId:'ohp',name:'Overhead Press',weight:'65',sets:'3',reps:'10',setDetail:[{weight:'65',reps:'10',setType:'normal'},{weight:'65',reps:'10',setType:'normal'},{weight:'65',reps:'9',setType:'normal'}]},
+      {exId:'incline',name:'Incline Dumbbell Press',weight:'38',sets:'3',reps:'12',setDetail:[{weight:'38',reps:'12',setType:'normal'},{weight:'38',reps:'12',setType:'normal'},{weight:'38',reps:'12',setType:'normal'}]}
+    ]}
+  ];
+  window._appData={
+    name:'Alex',startDate:start,showSettings:false,showDash:true,showGuide:false,showTrain:false,
+    periods:periods,
+    training:{
+      exercises:[
+        {id:'bench',name:'Bench Press',muscle:'Chest',equipment:'Barbell'},
+        {id:'ohp',name:'Overhead Press',muscle:'Shoulders',equipment:'Barbell'},
+        {id:'deadlift',name:'Deadlift',muscle:'Back',equipment:'Barbell'},
+        {id:'squat',name:'Back Squat',muscle:'Legs',equipment:'Barbell'},
+        {id:'row',name:'Barbell Row',muscle:'Back',equipment:'Barbell'},
+        {id:'pullup',name:'Pull-Up',muscle:'Back',equipment:'Bodyweight'},
+        {id:'rdl',name:'Romanian Deadlift',muscle:'Legs',equipment:'Barbell'},
+        {id:'legpress',name:'Leg Press',muscle:'Legs',equipment:'Machine'},
+        {id:'incline',name:'Incline Dumbbell Press',muscle:'Chest',equipment:'Dumbbell'},
+        {id:'dips',name:'Dips',muscle:'Chest',equipment:'Bodyweight'}
+      ],
+      programs:[{id:'prog1',name:'PPL Program',sessions:[
+        {id:'sess_push',name:'Push Day',exercises:[
+          {exId:'bench',name:'Bench Press',sets:'4',reps:'8',weight:'80'},
+          {exId:'ohp',name:'Overhead Press',sets:'3',reps:'10',weight:'55'},
+          {exId:'incline',name:'Incline Dumbbell Press',sets:'3',reps:'12',weight:'30'}
+        ]},
+        {id:'sess_pull',name:'Pull Day',exercises:[
+          {exId:'deadlift',name:'Deadlift',sets:'4',reps:'5',weight:'120'},
+          {exId:'row',name:'Barbell Row',sets:'4',reps:'8',weight:'75'},
+          {exId:'pullup',name:'Pull-Up',sets:'3',reps:'8',weight:''}
+        ]},
+        {id:'sess_legs',name:'Leg Day',exercises:[
+          {exId:'squat',name:'Back Squat',sets:'4',reps:'6',weight:'100'},
+          {exId:'legpress',name:'Leg Press',sets:'4',reps:'10',weight:'160'},
+          {exId:'rdl',name:'Romanian Deadlift',sets:'3',reps:'10',weight:'80'}
+        ]}
+      ]}],
+      sessions:demoSessions
+    }
+  };
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  render();
+};
 
 function esc(str){
   if(str===undefined||str===null)return '';
