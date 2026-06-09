@@ -469,8 +469,21 @@ window._applyOneDaySync = function(appData, dateStr, syncData) {
   var startDate=new Date(parseInt(sp[0]),parseInt(sp[1])-1,parseInt(sp[2]));
   var diffDays=Math.round((targetDate-startDate)/86400000);
   if(diffDays<0)return false;
-  var pi=Math.floor(diffDays/28), wi=Math.floor((diffDays%28)/7);
-  var period=appData.periods[pi]; if(!period)return false;
+  var weekIndex=Math.floor(diffDays/7);
+  // Walk through periods accounting for extra weeks
+  var period=null, wi=0;
+  var weeksAccum=0;
+  for(var pi=0;pi<appData.periods.length;pi++){
+    var p=appData.periods[pi];
+    var pw=p.weeks.length;
+    if(weekIndex < weeksAccum+pw){
+      period=p;
+      wi=weekIndex-weeksAccum;
+      break;
+    }
+    weeksAccum+=pw;
+  }
+  if(!period)return false;
   var week=period.weeks[wi]; if(!week)return false;
   var dayObj=week.days.find(function(d){return d.day===dayLabel;}); if(!dayObj)return false;
   var changed=false;
