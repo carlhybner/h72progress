@@ -506,13 +506,7 @@ window._runHealthSync = async function(silent) {
   });
   var results=await Promise.all(fetches);
   var totalChanged=0;
-  var debugInfo='Dates checked: '+dates.join(', ')+'\n';
-  results.forEach(function(r){
-    if(!r){return;}
-    debugInfo+='Found: '+r.dateStr+' -> '+JSON.stringify(r.data)+'\n';
-    if(window._applyOneDaySync(window._appData,r.dateStr,r.data))totalChanged++;
-  });
-  if(!silent)alert(debugInfo||'No documents found in Firestore');
+  results.forEach(function(r){if(!r)return;if(window._applyOneDaySync(window._appData,r.dateStr,r.data))totalChanged++;});
   if(totalChanged>0){
     window._saveToFirebase(window._appData); render();
     if(!silent)showHealthSyncToast('Synced '+totalChanged+' day'+(totalChanged>1?'s':'')+' from Apple Health \uD83C\uDF4E','ok');
