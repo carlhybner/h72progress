@@ -107,6 +107,12 @@
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 6px; vertical-align: middle; }
   .sync-dot.syncing { background: #ef9f27; animation: pulse 1s ease-in-out infinite; }
   .sync-dot.error { background: #f87171; }
+  .health-sync-btn { color: var(--text-secondary); border-color: transparent; background: transparent; margin-right: 4px; transition: color 0.15s; }
+  .health-sync-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .health-sync-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 999px; padding: 8px 18px; font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 7px; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 9999; white-space: nowrap; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+  .health-sync-toast.toast-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .health-sync-toast.toast-ok { border-color: var(--accent); color: var(--accent); }
+  .health-sync-toast.toast-warn { border-color: #ef9f27; color: #ef9f27; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
   /* ── Header ── */
@@ -444,6 +450,54 @@ window._loadFromFirebase = async function(uid) {
   catch(e) { console.error(e); }
   return null;
 };
+
+// -- Apple Health Sync (7-day rolling window) --
+window._healthSyncDateRef = function(uid, dateStr) { return doc(db, 'users', uid, 'health_sync', dateStr); };
+window._syncDateStr = function(daysAgo) {
+  var d = new Date(); d.setDate(d.getDate() - daysAgo);
+  var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dy=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dy;
+};
+window._applyOneDaySync = function(appData, dateStr, syncData) {
+  if (!syncData) return false;
+  var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var parts=dateStr.split('-');
+  var targetDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  var dow=(targetDate.getDay()+6)%7;
+  var dayLabel=DAYS[dow];
+  var sp=appData.startDate.split('-');
+  var startDate=new Date(parseInt(sp[0]),parseInt(sp[1])-1,parseInt(sp[2]));
+  var diffDays=Math.round((targetDate-startDate)/86400000);
+  if(diffDays<0)return false;
+  var pi=Math.floor(diffDays/28), wi=Math.floor((diffDays%28)/7);
+  var period=appData.periods[pi]; if(!period)return false;
+  var week=period.weeks[wi]; if(!week)return false;
+  var dayObj=week.days.find(function(d){return d.day===dayLabel;}); if(!dayObj)return false;
+  var changed=false;
+  if(syncData.weight!==undefined&&syncData.weight!==''){dayObj.weight=String(syncData.weight);changed=true;}
+  if(syncData.calories!==undefined&&syncData.calories!==''){dayObj.calories=String(syncData.calories);changed=true;}
+  if(syncData.steps!==undefined&&syncData.steps!==''){dayObj.steps=String(syncData.steps);changed=true;}
+  return changed;
+};
+window._runHealthSync = async function(silent) {
+  if(window._demoMode||!window._auth||!window._auth.currentUser)return;
+  var uid=window._auth.currentUser.uid;
+  var dates=[]; for(var i=0;i<7;i++)dates.push(window._syncDateStr(i));
+  var fetches=dates.map(function(dateStr){
+    return getDoc(window._healthSyncDateRef(uid,dateStr))
+      .then(function(s){return s.exists()?{dateStr:dateStr,data:s.data()}:null;})
+      .catch(function(){return null;});
+  });
+  var results=await Promise.all(fetches);
+  var totalChanged=0;
+  results.forEach(function(r){if(!r)return;if(window._applyOneDaySync(window._appData,r.dateStr,r.data))totalChanged++;});
+  if(totalChanged>0){
+    window._saveToFirebase(window._appData); render();
+    if(!silent)showHealthSyncToast('Synced '+totalChanged+' day'+(totalChanged>1?'s':'')+' from Apple Health \uD83C\uDF4E','ok');
+  } else {
+    if(!silent)showHealthSyncToast('No new Health data found.','warn');
+  }
+};
 window.submitAuth = async function() {
   const email=document.getElementById('auth-email').value.trim(), password=document.getElementById('auth-password').value, confirm=document.getElementById('auth-confirm').value;
   const isSignup=window._authMode==='signup';
@@ -503,6 +557,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     render();
+    window._runHealthSync(true);
   } else {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('auth-screen').style.display='flex';
@@ -513,6 +568,15 @@ onAuthStateChanged(auth, async (user) => {
 
 <script>
 function setSyncState(s){var d=document.getElementById('sync-dot');if(!d)return;d.className='sync-dot'+(s==='syncing'?' syncing':s==='error'?' error':'');d.title=s==='syncing'?'Saving\u2026':s==='error'?'Save failed':'Saved';}
+function showHealthSyncToast(msg,type){
+  var ex=document.getElementById('health-sync-toast');if(ex)ex.remove();
+  var t=document.createElement('div');t.id='health-sync-toast';
+  t.className='health-sync-toast'+(type==='ok'?' toast-ok':' toast-warn');
+  t.innerHTML='<i class="ti ti-'+(type==='ok'?'circle-check':'info-circle')+'" style="font-size:14px;flex-shrink:0"></i>'+msg;
+  document.body.appendChild(t);
+  setTimeout(function(){t.classList.add('toast-visible');},10);
+  setTimeout(function(){t.classList.remove('toast-visible');setTimeout(function(){t.remove();},350);},3000);
+}
 
 var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 var chartWeightInst=null,chartStepsInst=null;
@@ -772,6 +836,7 @@ function render(){
     '<button class="tab-btn'+(data.showGuide?' active':'')+'" id="toggle-guide"><i class="ti ti-book" style="font-size:14px"></i>Guide</button>'+
     '<button class="tab-btn'+(data.showSettings?' active':'')+'" id="toggle-settings"><i class="ti ti-settings" style="font-size:14px"></i>Settings</button>'+
     '<div class="tab-bar-space"></div>'+
+    (!window._demoMode ? '<button class="icon-btn health-sync-btn" id="health-sync-btn" title="Sync from Apple Health" onclick="window._runHealthSync(false)"><i class="ti ti-apple" style="font-size:15px"></i></button>' : '')+
     '<span id="sync-dot" class="sync-dot" style="margin-right:10px" title="Saved"></span>'+
     '<button class="signout-btn" id="signout-btn" title="'+(window._demoMode?'Exit demo':'Sign out')+'"><i class="ti ti-'+(window._demoMode?'x':'logout')+'"></i>'+(window._demoMode?' Exit demo':'')+'</button>'+
     '</div>';
