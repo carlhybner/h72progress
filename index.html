@@ -474,9 +474,12 @@ window._applyOneDaySync = function(appData, dateStr, syncData) {
   var week=period.weeks[wi]; if(!week)return false;
   var dayObj=week.days.find(function(d){return d.day===dayLabel;}); if(!dayObj)return false;
   var changed=false;
-  if(syncData.weight!==undefined&&syncData.weight!==''){dayObj.weight=String(syncData.weight);changed=true;}
-  if(syncData.calories!==undefined&&syncData.calories!==''){dayObj.calories=String(syncData.calories);changed=true;}
-  if(syncData.steps!==undefined&&syncData.steps!==''){dayObj.steps=String(syncData.steps);changed=true;}
+  // normalise comma decimals (e.g. Swedish locale "82,9" -> "82.9")
+  function norm(v){ return v===undefined||v===''?'':String(v).replace(',','.'); }
+  var w=norm(syncData.weight), c=norm(syncData.calories), s=norm(syncData.steps);
+  if(w!==''){dayObj.weight=w;changed=true;}
+  if(c!==''){dayObj.calories=c;changed=true;}
+  if(s!==''){dayObj.steps=s;changed=true;}
   return changed;
 };
 window._runHealthSync = async function(silent) {
