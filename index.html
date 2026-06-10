@@ -488,7 +488,7 @@ window._applyOneDaySync = function(appData, dateStr, syncData) {
   var dayObj=week.days.find(function(d){return d.day===dayLabel;}); if(!dayObj)return false;
   var changed=false;
   // normalise comma decimals (e.g. Swedish locale "82,9" -> "82.9")
-  function norm(v){ return v===undefined||v===''?'':String(v).replace(',','.'); }
+  function norm(v){ if(v===undefined||v==='')return ''; var n=parseFloat(String(v).replace(',','.')); return isNaN(n)?'':String(Math.round(n*10)/10); }
   var w=norm(syncData.weight), c=norm(syncData.calories), s=norm(syncData.steps);
   if(w!==''){dayObj.weight=w;changed=true;}
   if(c!==''){dayObj.calories=c;changed=true;}
