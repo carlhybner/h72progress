@@ -107,12 +107,6 @@
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 6px; vertical-align: middle; }
   .sync-dot.syncing { background: #ef9f27; animation: pulse 1s ease-in-out infinite; }
   .sync-dot.error { background: #f87171; }
-  .health-sync-btn { color: var(--text-secondary); border-color: transparent; background: transparent; margin-right: 4px; transition: color 0.15s; }
-  .health-sync-btn:hover { color: var(--accent); border-color: var(--accent); }
-  .health-sync-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 999px; padding: 8px 18px; font-size: 13px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 7px; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 9999; white-space: nowrap; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
-  .health-sync-toast.toast-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .health-sync-toast.toast-ok { border-color: var(--accent); color: var(--accent); }
-  .health-sync-toast.toast-warn { border-color: #ef9f27; color: #ef9f27; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
   /* ── Header ── */
@@ -193,7 +187,8 @@
   /* ── Period cards ── */
   .period-card { background: var(--bg-primary); border: 0.5px solid var(--border-t); border-radius: var(--radius-lg); margin-bottom: 1.25rem; overflow: hidden; }
   .period-header { padding: .875rem 1.25rem; border-bottom: 0.5px solid var(--border-t); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .period-title { font-size: 14px; font-weight: 500; color: #6ab0f5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .period-title { font-size: 14px; font-weight: 500; color: #6ab0f5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; cursor: pointer; }
+  .period-card.collapsed .period-goals-grid, .period-card.collapsed .week-section, .period-card.collapsed .period-add-week-row { display: none; }
   .period-goals-grid { display: grid; grid-template-columns: auto auto; gap: 8px 16px; align-items: center; }
   .period-goals-grid .goal-label { font-size: 12px; color: #6ab0f5; white-space: nowrap; }
   .period-goals-grid .goal-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -451,69 +446,6 @@ window._loadFromFirebase = async function(uid) {
   return null;
 };
 
-// -- Apple Health Sync (7-day rolling window) --
-window._healthSyncDateRef = function(uid, dateStr) { return doc(db, 'users', uid, 'health_sync', dateStr); };
-window._syncDateStr = function(daysAgo) {
-  var d = new Date(); d.setDate(d.getDate() - daysAgo);
-  var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dy=String(d.getDate()).padStart(2,'0');
-  return y+'-'+m+'-'+dy;
-};
-window._applyOneDaySync = function(appData, dateStr, syncData) {
-  if (!syncData) return false;
-  var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  var parts=dateStr.split('-');
-  var targetDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
-  var dow=(targetDate.getDay()+6)%7;
-  var dayLabel=DAYS[dow];
-  var sp=appData.startDate.split('-');
-  var startDate=new Date(parseInt(sp[0]),parseInt(sp[1])-1,parseInt(sp[2]));
-  var diffDays=Math.round((targetDate-startDate)/86400000);
-  if(diffDays<0)return false;
-  var weekIndex=Math.floor(diffDays/7);
-  // Walk through periods accounting for extra weeks
-  var period=null, wi=0;
-  var weeksAccum=0;
-  for(var pi=0;pi<appData.periods.length;pi++){
-    var p=appData.periods[pi];
-    var pw=p.weeks.length;
-    if(weekIndex < weeksAccum+pw){
-      period=p;
-      wi=weekIndex-weeksAccum;
-      break;
-    }
-    weeksAccum+=pw;
-  }
-  if(!period)return false;
-  var week=period.weeks[wi]; if(!week)return false;
-  var dayObj=week.days.find(function(d){return d.day===dayLabel;}); if(!dayObj)return false;
-  var changed=false;
-  // normalise comma decimals (e.g. Swedish locale "82,9" -> "82.9")
-  function norm(v){ if(v===undefined||v==='')return ''; var n=parseFloat(String(v).replace(',','.')); return isNaN(n)?'':String(Math.round(n*10)/10); }
-  var w=norm(syncData.weight), c=norm(syncData.calories), s=norm(syncData.steps);
-  if(w!==''){dayObj.weight=w;changed=true;}
-  if(c!==''){dayObj.calories=c;changed=true;}
-  if(s!==''){dayObj.steps=s;changed=true;}
-  return changed;
-};
-window._runHealthSync = async function(silent) {
-  if(window._demoMode||!window._auth||!window._auth.currentUser)return;
-  var uid=window._auth.currentUser.uid;
-  var dates=[]; for(var i=0;i<7;i++)dates.push(window._syncDateStr(i));
-  var fetches=dates.map(function(dateStr){
-    return getDoc(window._healthSyncDateRef(uid,dateStr))
-      .then(function(s){return s.exists()?{dateStr:dateStr,data:s.data()}:null;})
-      .catch(function(){return null;});
-  });
-  var results=await Promise.all(fetches);
-  var totalChanged=0;
-  results.forEach(function(r){if(!r)return;if(window._applyOneDaySync(window._appData,r.dateStr,r.data))totalChanged++;});
-  if(totalChanged>0){
-    window._saveToFirebase(window._appData); render();
-    if(!silent)showHealthSyncToast('Synced '+totalChanged+' day'+(totalChanged>1?'s':'')+' from Apple Health \uD83C\uDF4E','ok');
-  } else {
-    if(!silent)showHealthSyncToast('No new Health data found.','warn');
-  }
-};
 window.submitAuth = async function() {
   const email=document.getElementById('auth-email').value.trim(), password=document.getElementById('auth-password').value, confirm=document.getElementById('auth-confirm').value;
   const isSignup=window._authMode==='signup';
@@ -573,7 +505,6 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     render();
-    window._runHealthSync(true);
   } else {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('auth-screen').style.display='flex';
@@ -584,15 +515,6 @@ onAuthStateChanged(auth, async (user) => {
 
 <script>
 function setSyncState(s){var d=document.getElementById('sync-dot');if(!d)return;d.className='sync-dot'+(s==='syncing'?' syncing':s==='error'?' error':'');d.title=s==='syncing'?'Saving\u2026':s==='error'?'Save failed':'Saved';}
-function showHealthSyncToast(msg,type){
-  var ex=document.getElementById('health-sync-toast');if(ex)ex.remove();
-  var t=document.createElement('div');t.id='health-sync-toast';
-  t.className='health-sync-toast'+(type==='ok'?' toast-ok':' toast-warn');
-  t.innerHTML='<i class="ti ti-'+(type==='ok'?'circle-check':'info-circle')+'" style="font-size:14px;flex-shrink:0"></i>'+msg;
-  document.body.appendChild(t);
-  setTimeout(function(){t.classList.add('toast-visible');},10);
-  setTimeout(function(){t.classList.remove('toast-visible');setTimeout(function(){t.remove();},350);},3000);
-}
 
 var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 var chartWeightInst=null,chartStepsInst=null;
@@ -602,9 +524,15 @@ function scheduleSave(){if(window._demoMode)return;if(saveTimer)clearTimeout(sav
 function addDays(s,n){var d=new Date(s);d.setDate(d.getDate()+n);return d}
 function fmtDate(d){return d.toLocaleDateString('en-SE',{day:'numeric',month:'short'})}
 function weekLabel(s,twi){return fmtDate(addDays(s,twi*7))+' \u2013 '+fmtDate(addDays(s,twi*7+6))}
-function periodLabel(s,pi){return fmtDate(addDays(s,pi*28))+' \u2013 '+fmtDate(addDays(s,pi*28+27))}
+// Cumulative week index for period pi / week wi, accounting for periods that have had extra weeks added
+function weekIndexOffset(periods,pi,wi){var idx=0;for(var i=0;i<pi;i++){idx+=periods[i].weeks.length;}return idx+wi;}
+function periodLabel(s,periods,pi){
+  var startWeekIdx=weekIndexOffset(periods,pi,0);
+  var numWeeks=periods[pi].weeks.length;
+  return fmtDate(addDays(s,startWeekIdx*7))+' \u2013 '+fmtDate(addDays(s,(startWeekIdx+numWeeks)*7-1));
+}
 function makeWeek(){return{collapsed:true,days:DAYS.map(function(d){return{day:d,weight:'',calories:'',steps:''}})}}
-function makePeriod(){return{goal:'maintain',calGoal:2000,stepGoal:8000,weeks:[makeWeek(),makeWeek(),makeWeek(),makeWeek()]}}
+function makePeriod(){return{goal:'maintain',calGoal:2000,stepGoal:8000,collapsed:false,weeks:[makeWeek(),makeWeek(),makeWeek(),makeWeek()]}}
 
 function weekStats(week){
   var wts=week.days.map(function(d){return parseFloat(d.weight)}).filter(function(v){return !isNaN(v)&&v>0});
@@ -625,7 +553,7 @@ function getCurrentAndLastWeekIndices(){
   var allWeeks=getAllWeeksFlat();
   var currentIdx=allWeeks.length>0?allWeeks.length-1:0;
   for(var i=0;i<allWeeks.length;i++){
-    var wMon=new Date(startDate);wMon.setDate(startDate.getDate()+(allWeeks[i].pi*4+allWeeks[i].wi)*7);wMon.setHours(0,0,0,0);
+    var wMon=new Date(startDate);wMon.setDate(startDate.getDate()+weekIndexOffset(window._appData.periods,allWeeks[i].pi,allWeeks[i].wi)*7);wMon.setHours(0,0,0,0);
     var wSun=new Date(wMon);wSun.setDate(wMon.getDate()+6);wSun.setHours(23,59,59,999);
     if(today>=wMon&&today<=wSun){currentIdx=i;break;}
   }
@@ -673,7 +601,7 @@ function buildCharts(){
   var labels=[],weights=[],steps=[],stepColors=[],stepBorderColors=[];
   window._appData.periods.forEach(function(p,pi){
     p.weeks.forEach(function(w,wi){
-      labels.push(fmtDate(addDays(window._appData.startDate,(pi*4+wi)*7)));
+      labels.push(fmtDate(addDays(window._appData.startDate,weekIndexOffset(window._appData.periods,pi,wi)*7)));
       var s=weekStats(w);
       weights.push(s.avgWeight!==null?parseFloat(s.avgWeight.toFixed(1)):null);
       var avg=s.avgSteps!==null?s.avgSteps:null;
@@ -754,7 +682,7 @@ function renderDash(app){
       var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[x.p.goal]||'badge-maintain';
       var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[x.p.goal]||'Maintain';
       periodsHtml+='<div class="period-stat"><div class="period-stat-label"><span>Period '+(x.pi+1)+'</span><span class="period-stat-badge '+bc+'">'+bl+'</span></div>'+
-        '<div style="font-size:10px;color:var(--text-tertiary);margin-bottom:6px">'+periodLabel(window._appData.startDate,x.pi)+'</div>'+
+        '<div style="font-size:10px;color:var(--text-tertiary);margin-bottom:6px">'+periodLabel(window._appData.startDate,window._appData.periods,x.pi)+'</div>'+
         '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">'+(pS!==null?pS.toFixed(1)+' kg':'')+' &rarr; '+(pE!==null?pE.toFixed(1)+' kg':'')+'</div>'+
         weightDeltaPill(pD)+'</div>';
     });
@@ -852,7 +780,6 @@ function render(){
     '<button class="tab-btn'+(data.showGuide?' active':'')+'" id="toggle-guide"><i class="ti ti-book" style="font-size:14px"></i>Guide</button>'+
     '<button class="tab-btn'+(data.showSettings?' active':'')+'" id="toggle-settings"><i class="ti ti-settings" style="font-size:14px"></i>Settings</button>'+
     '<div class="tab-bar-space"></div>'+
-    (!window._demoMode ? '<button class="icon-btn health-sync-btn" id="health-sync-btn" title="Sync from Apple Health" onclick="window._runHealthSync(false)"><i class="ti ti-apple" style="font-size:15px"></i></button>' : '')+
     '<span id="sync-dot" class="sync-dot" style="margin-right:10px" title="Saved"></span>'+
     '<button class="signout-btn" id="signout-btn" title="'+(window._demoMode?'Exit demo':'Sign out')+'"><i class="ti ti-'+(window._demoMode?'x':'logout')+'"></i>'+(window._demoMode?' Exit demo':'')+'</button>'+
     '</div>';
@@ -879,14 +806,14 @@ function render(){
   data.periods.forEach(function(period,pi){
     var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[period.goal]||'badge-maintain';
     var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[period.goal]||'Maintain';
-    var pLabel='Period '+(pi+1)+' \u2014 '+periodLabel(data.startDate,pi);
+    var pLabel='Period '+(pi+1)+' \u2014 '+periodLabel(data.startDate,data.periods,pi);
     var stepGoal=period.stepGoal||8000;
-    var card=document.createElement('div');card.className='period-card';
+    var card=document.createElement('div');card.className='period-card'+(period.collapsed?' collapsed':'');
     var isLastPeriod=(pi===data.periods.length-1);
     var canDelete=isLastPeriod&&data.periods.length>1&&isPeriodEmpty(pi);
     var deleteBtnHtml=canDelete?'<button class="icon-btn" data-action="delete-period" data-pi="'+pi+'" title="Remove this empty period" style="padding:4px 8px;font-size:11px;height:28px;color:var(--text-danger);border-color:var(--text-danger);opacity:0.7;flex-shrink:0"><i class="ti ti-trash" style="font-size:13px"></i></button>':'';
     card.innerHTML='<div class="period-header">'+
-      '<div class="period-title"><i class="ti ti-calendar" style="font-size:15px;color:var(--text-secondary)"></i><span>'+pLabel+'</span><span class="goal-badge '+bc+'">'+bl+'</span>'+deleteBtnHtml+'</div>'+
+      '<div class="period-title" data-action="toggle-period" data-pi="'+pi+'"><i class="ti ti-chevron-down chevron" style="font-size:13px"></i><i class="ti ti-calendar" style="font-size:15px;color:var(--text-secondary)"></i><span>'+pLabel+'</span><span class="goal-badge '+bc+'">'+bl+'</span>'+deleteBtnHtml+'</div>'+
       '<div class="period-goals-grid">'+
         '<span class="goal-label"><i class="ti ti-flame" style="font-size:13px;vertical-align:-2px"></i> Calorie goal:</span>'+
         '<div class="goal-row"><select class="goal-select" data-pi="'+pi+'" data-field="goal"><option value="deficit"'+(period.goal==='deficit'?' selected':'')+'>Deficit</option><option value="maintain"'+(period.goal==='maintain'?' selected':'')+'>Maintain</option><option value="surplus"'+(period.goal==='surplus'?' selected':'')+'>Surplus</option></select>'+
@@ -897,7 +824,7 @@ function render(){
       '</div></div>';
 
     period.weeks.forEach(function(week,wi){
-      var totalWi=pi*4+wi,stats=weekStats(week),goalCal=period.calGoal||2000;
+      var totalWi=weekIndexOffset(data.periods,pi,wi),stats=weekStats(week),goalCal=period.calGoal||2000;
       var prevWeek=wi>0?period.weeks[wi-1]:(pi>0&&data.periods[pi-1].weeks.length?data.periods[pi-1].weeks[data.periods[pi-1].weeks.length-1]:null);
       var prevStats=prevWeek?weekStats(prevWeek):null;
       var wLabel=weekLabel(data.startDate,totalWi);
@@ -944,7 +871,7 @@ function render(){
       card.appendChild(sec);
     });
 
-    var ar=document.createElement('div');ar.style.cssText='padding:7px 1.25rem;border-top:0.5px solid var(--border-t)';
+    var ar=document.createElement('div');ar.className='period-add-week-row';ar.style.cssText='padding:7px 1.25rem;border-top:0.5px solid var(--border-t)';
     ar.innerHTML='<button class="add-btn" data-pi="'+pi+'" data-action="addweek"><i class="ti ti-plus"></i>Add week</button>';
     card.appendChild(ar);app.appendChild(card);
   });
@@ -993,6 +920,9 @@ function render(){
   });
   app.querySelectorAll('[data-action="delete-period"]').forEach(function(btn){
     btn.addEventListener('click',function(e){e.stopPropagation();var pi=parseInt(btn.dataset.pi);if(data.periods.length<=1)return;if(!isPeriodEmpty(pi))return;data.periods.splice(pi,1);scheduleSave();render();});
+  });
+  app.querySelectorAll('[data-action="toggle-period"]').forEach(function(el){
+    el.addEventListener('click',function(){var pi=parseInt(el.dataset.pi);data.periods[pi].collapsed=!data.periods[pi].collapsed;render()});
   });
   var ap=document.getElementById('add-period');
   if(ap)ap.addEventListener('click',function(){data.periods.push(makePeriod());scheduleSave();render()});
