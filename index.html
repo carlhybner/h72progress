@@ -169,8 +169,7 @@
   .daily-inp { height: 46px; font-size: 17px; }
   .daily-field-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
   .daily-actions { display: flex; align-items: center; justify-content: center; margin-top: 18px; }
-  .full-history-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; padding: .9rem 1.25rem; background: var(--bg-primary); border-radius: var(--radius-lg); margin-bottom: 1.25rem; }
-  .full-history-toggle span { font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+
   /* keep .icon-btn for calc button and delete-period button inside cards */
   .icon-btn { border: 1px solid var(--border-s); border-radius: var(--radius-pill); background: transparent; color: var(--text-secondary); padding: 7px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; transition: background-color .15s var(--ease), color .15s var(--ease); }
   .icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
@@ -560,9 +559,10 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('main-app').style.display='none';
     const remote=await window._loadFromFirebase(user.uid);
     if(remote){window._appData=remote;}
-    else{const t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);m.setDate(t.getDate()-dow);window._appData={name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,showGuide:false,showTrain:false,periods:[makePeriod()]};}
+    else{const t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);m.setDate(t.getDate()-dow);window._appData={name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,showGuide:false,showTrain:false,showHistory:false,periods:[makePeriod()]};}
     window._appData.periods.forEach(function(p){if(!p.stepGoal)p.stepGoal=8000;});
     if(window._appData.showGuide===undefined)window._appData.showGuide=false;
+    if(window._appData.showHistory===undefined)window._appData.showHistory=false;
     window._appData.showTrain=false;
     if(!window._appData.training)window._appData.training={exercises:[],programs:[],sessions:[]};
     if(!window._appData.training.programs){var _mr=window._appData.training.routines;window._appData.training.programs=(_mr&&_mr.length)?[{id:'prog_migrated',name:'My Program',sessions:_mr.map(function(r){return {id:r.id,name:r.name,exercises:r.exercises||[]};})}]:[];}
@@ -712,14 +712,11 @@ function buildCharts(){
   if(sCanvas){chartStepsInst=new Chart(sCanvas,{type:'bar',data:{labels:labels,datasets:[{data:steps,backgroundColor:stepColors,borderColor:stepBorderColors,borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y!==null?c.parsed.y.toLocaleString()+' steps/day':'No data'}}}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxRotation:40,autoSkip:true,maxTicksLimit:10}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v}},grace:'5%'}}}});}
 }
 
-window._fullHistoryOpen=window._fullHistoryOpen||false;
 function buildFullHistorySection(app){
   var data=window._appData;
-  var toggle=document.createElement('div');toggle.className='full-history-toggle';toggle.id='full-history-toggle';
-  toggle.innerHTML='<span><i class="ti ti-history" style="font-size:15px"></i>Full history &amp; period editing</span><i class="ti ti-chevron-'+(window._fullHistoryOpen?'up':'down')+'" style="font-size:14px"></i>';
-  app.appendChild(toggle);
-  toggle.addEventListener('click',function(){window._fullHistoryOpen=!window._fullHistoryOpen;render();});
-  if(!window._fullHistoryOpen)return;
+  var heading=document.createElement('div');heading.className='panel';heading.style.cssText='padding-bottom:.75rem';
+  heading.innerHTML='<div style="font-size:15px;font-weight:600;color:oklch(68% 0.14 250);display:flex;align-items:center;gap:8px"><i class="ti ti-history" style="font-size:17px;color:var(--text-secondary)"></i>History &amp; Periods</div>';
+  app.appendChild(heading);
 
   data.periods.forEach(function(period,pi){
     var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[period.goal]||'badge-maintain';
@@ -905,7 +902,6 @@ function renderDash(app){
   panel.innerHTML=startRow+thisRow+lastRow+chartsHtml+periodsHtml;
   app.appendChild(panel);
   setTimeout(buildCharts,60);
-  buildFullHistorySection(app);
 }
 
 function renderGuide(app){
@@ -1024,6 +1020,7 @@ function renderNavDrawer(data,isTracker,activateTab){
   var items=[
     {tab:null,label:'Tracker',icon:'clipboard-list',active:isTracker},
     {tab:'dash',label:'Dashboard',icon:'layout-dashboard',active:data.showDash},
+    {tab:'history',label:'History & Periods',icon:'history',active:data.showHistory},
     {tab:'train',label:'Training',icon:'barbell',active:data.showTrain},
     {tab:'guide',label:'Guide',icon:'book',active:data.showGuide},
     {tab:'settings',label:'Settings',icon:'settings',active:data.showSettings}
@@ -1119,7 +1116,7 @@ function render(){
   var data=window._appData;
   var app=document.getElementById('app');app.innerHTML='';
 
-  var isTracker=!data.showDash&&!data.showTrain&&!data.showGuide&&!data.showSettings;
+  var isTracker=!data.showDash&&!data.showTrain&&!data.showGuide&&!data.showSettings&&!data.showHistory;
   var hdr=document.createElement('div');hdr.className='app-header';
   hdr.innerHTML='<div class="header-left">'+
     '<button class="hamburger-btn" id="nav-toggle" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu"><i class="ti ti-menu-2"></i></button>'+
@@ -1147,12 +1144,14 @@ function render(){
   }
 
   if(data.showDash)renderDash(app);
+  if(data.showHistory)buildFullHistorySection(app);
   if(data.showGuide)renderGuide(app);
   if(data.showTrain)renderTraining(app);
   if(isTracker)renderTrackerDaily(app,data);
 
   function activateTab(tab){
     data.showDash=tab==='dash';
+    data.showHistory=tab==='history';
     data.showGuide=tab==='guide';
     data.showTrain=tab==='train';
     data.showSettings=tab==='settings';
@@ -2723,7 +2722,7 @@ window.launchDemo=function(){
     ]}
   ];
   window._appData={
-    name:'Alex',startDate:start,showSettings:false,showDash:true,showGuide:false,showTrain:false,
+    name:'Alex',startDate:start,showSettings:false,showDash:true,showGuide:false,showTrain:false,showHistory:false,
     periods:periods,
     training:{
       exercises:[
