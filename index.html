@@ -151,6 +151,26 @@
   .drawer-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .signout-btn { background: transparent; border: 1px solid var(--border-p); border-radius: var(--radius-pill); color: var(--text-tertiary); font-size: 12px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-family: var(--font-body); padding: 7px 12px; flex-shrink: 0; transition: color .15s var(--ease), border-color .15s var(--ease); }
   .signout-btn:hover { color: var(--text-danger); border-color: var(--text-danger); }
+  /* ── Daily-first tracker ── */
+  .daily-card { padding: 1.25rem 1.25rem 1.4rem; }
+  .daily-switcher { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .daily-nav-btn { width: 44px; height: 44px; border-radius: var(--radius-pill); border: 1px solid var(--border-p); background: transparent; color: var(--text-primary); display: inline-flex; align-items: center; justify-content: center; font-size: 19px; cursor: pointer; flex-shrink: 0; transition: background-color .15s var(--ease), opacity .15s var(--ease); }
+  .daily-nav-btn:hover:not(:disabled) { background: var(--bg-secondary); }
+  .daily-nav-btn:disabled { opacity: .35; cursor: default; }
+  .daily-switcher-mid { text-align: center; flex: 1; min-width: 0; }
+  .daily-date-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .daily-weekday { font-family: var(--font-heading); font-size: 19px; font-weight: 700; color: var(--text-primary); }
+  .today-pill { background: var(--accent-dim); color: var(--accent); font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-pill); flex-shrink: 0; }
+  .daily-date-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+  .daily-jump-row { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .daily-jump-row .field-inp { max-width: 170px; text-align: center; }
+  .daily-period-context { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 18px; font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
+  .daily-fields { display: flex; flex-direction: column; gap: 16px; }
+  .daily-inp { height: 46px; font-size: 17px; }
+  .daily-field-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+  .daily-actions { display: flex; align-items: center; justify-content: center; margin-top: 18px; }
+  .full-history-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; padding: .9rem 1.25rem; background: var(--bg-primary); border-radius: var(--radius-lg); margin-bottom: 1.25rem; }
+  .full-history-toggle span { font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
   /* keep .icon-btn for calc button and delete-period button inside cards */
   .icon-btn { border: 1px solid var(--border-s); border-radius: var(--radius-pill); background: transparent; color: var(--text-secondary); padding: 7px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; transition: background-color .15s var(--ease), color .15s var(--ease); }
   .icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
@@ -580,6 +600,32 @@ function periodLabel(s,periods,pi){
 function makeWeek(){return{collapsed:true,days:DAYS.map(function(d){return{day:d,weight:'',calories:'',steps:''}})}}
 function makePeriod(){return{goal:'maintain',calGoal:2000,stepGoal:8000,collapsed:false,weeks:[makeWeek(),makeWeek(),makeWeek(),makeWeek()]}}
 
+/* ── Date <-> {period,week,day} mapping for the daily-first tracker ── */
+function isoDate(d){var dt=(d instanceof Date)?d:new Date(d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+function daysBetween(a,b){var A=new Date(a);A.setHours(0,0,0,0);var B=new Date(b);B.setHours(0,0,0,0);return Math.round((B-A)/86400000);}
+// Locate {pi,wi,di} for an ISO date string. Auto-extends weeks onto the last
+// period (same as clicking "Add week") if the date is beyond existing data.
+// Returns null if the date is before the app's startDate.
+function locateDaySlot(dateStr){
+  var data=window._appData;
+  var offset=daysBetween(data.startDate,dateStr);
+  if(offset<0)return null;
+  var totalWeekIdx=Math.floor(offset/7),di=offset%7;
+  var totalWeeks=0;data.periods.forEach(function(p){totalWeeks+=p.weeks.length;});
+  var extended=false,guard=0;
+  while(totalWeekIdx>=totalWeeks&&guard<520){
+    data.periods[data.periods.length-1].weeks.push(makeWeek());
+    totalWeeks++;guard++;extended=true;
+  }
+  var idx=0;
+  for(var pi=0;pi<data.periods.length;pi++){
+    var wlen=data.periods[pi].weeks.length;
+    if(totalWeekIdx<idx+wlen)return{pi:pi,wi:totalWeekIdx-idx,di:di,extended:extended};
+    idx+=wlen;
+  }
+  return null;
+}
+
 function weekStats(week){
   var wts=week.days.map(function(d){return parseFloat(d.weight)}).filter(function(v){return !isNaN(v)&&v>0});
   var cals=week.days.map(function(d){return parseInt(d.calories)}).filter(function(v){return !isNaN(v)&&v>0});
@@ -666,6 +712,125 @@ function buildCharts(){
   if(sCanvas){chartStepsInst=new Chart(sCanvas,{type:'bar',data:{labels:labels,datasets:[{data:steps,backgroundColor:stepColors,borderColor:stepBorderColors,borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.y!==null?c.parsed.y.toLocaleString()+' steps/day':'No data'}}}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxRotation:40,autoSkip:true,maxTicksLimit:10}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v}},grace:'5%'}}}});}
 }
 
+window._fullHistoryOpen=window._fullHistoryOpen||false;
+function buildFullHistorySection(app){
+  var data=window._appData;
+  var toggle=document.createElement('div');toggle.className='full-history-toggle';toggle.id='full-history-toggle';
+  toggle.innerHTML='<span><i class="ti ti-history" style="font-size:15px"></i>Full history &amp; period editing</span><i class="ti ti-chevron-'+(window._fullHistoryOpen?'up':'down')+'" style="font-size:14px"></i>';
+  app.appendChild(toggle);
+  toggle.addEventListener('click',function(){window._fullHistoryOpen=!window._fullHistoryOpen;render();});
+  if(!window._fullHistoryOpen)return;
+
+  data.periods.forEach(function(period,pi){
+    var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[period.goal]||'badge-maintain';
+    var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[period.goal]||'Maintain';
+    var pLabel='Period '+(pi+1)+' \u2014 '+periodLabel(data.startDate,data.periods,pi);
+    var stepGoal=period.stepGoal||8000;
+    var card=document.createElement('div');card.className='period-card'+(period.collapsed?' collapsed':'');
+    var isLastPeriod=(pi===data.periods.length-1);
+    var canDelete=isLastPeriod&&data.periods.length>1&&isPeriodEmpty(pi);
+    var deleteBtnHtml=canDelete?'<button class="icon-btn" data-action="delete-period" data-pi="'+pi+'" title="Remove this empty period" style="padding:4px 8px;font-size:11px;height:28px;color:var(--text-danger);border-color:var(--text-danger);opacity:0.7;flex-shrink:0"><i class="ti ti-trash" style="font-size:13px"></i></button>':'';
+    card.innerHTML='<div class="period-header">'+
+      '<div class="period-title" data-action="toggle-period" data-pi="'+pi+'"><i class="ti ti-chevron-down chevron" style="font-size:13px"></i><i class="ti ti-calendar" style="font-size:15px;color:var(--text-secondary)"></i><span>'+pLabel+'</span><span class="goal-badge '+bc+'">'+bl+'</span>'+deleteBtnHtml+'</div>'+
+      '<div class="period-goals-grid">'+
+        '<span class="goal-label"><i class="ti ti-flame" style="font-size:13px;vertical-align:-2px"></i> Calorie goal:</span>'+
+        '<div class="goal-row"><select class="goal-select" data-pi="'+pi+'" data-field="goal"><option value="deficit"'+(period.goal==='deficit'?' selected':'')+'>Deficit</option><option value="maintain"'+(period.goal==='maintain'?' selected':'')+'>Maintain</option><option value="surplus"'+(period.goal==='surplus'?' selected':'')+'>Surplus</option></select>'+
+        '<input class="goal-input" type="number" min="500" max="10000" step="50" value="'+period.calGoal+'" data-pi="'+pi+'" data-field="calGoal"> <span class="goal-label">kcal/day</span>'+
+        '<button class="icon-btn" style="padding:4px 9px;font-size:11px;height:30px;white-space:nowrap" data-calc-pi="'+pi+'" title="Calculate recommended daily calories"><i class="ti ti-calculator" style="font-size:12px"></i> Calculate</button></div>'+
+        '<span class="goal-label"><i class="ti ti-shoe" style="font-size:13px;vertical-align:-2px"></i> Step goal:</span>'+
+        '<div class="goal-row"><input class="goal-input" type="number" min="1000" max="50000" step="500" value="'+stepGoal+'" data-pi="'+pi+'" data-field="stepGoal" style="width:100px"> <span class="goal-label">steps/day</span></div>'+
+      '</div></div>';
+
+    period.weeks.forEach(function(week,wi){
+      var totalWi=weekIndexOffset(data.periods,pi,wi),stats=weekStats(week),goalCal=period.calGoal||2000;
+      var prevWeek=wi>0?period.weeks[wi-1]:(pi>0&&data.periods[pi-1].weeks.length?data.periods[pi-1].weeks[data.periods[pi-1].weeks.length-1]:null);
+      var prevStats=prevWeek?weekStats(prevWeek):null;
+      var wLabel=weekLabel(data.startDate,totalWi);
+      var dHtml='';
+      if(stats.avgWeight!==null&&prevStats&&prevStats.avgWeight){var diff=stats.avgWeight-prevStats.avgWeight;dHtml='<span class="weight-delta '+(diff<0?'delta-loss':'delta-gain')+'" title="Weight change vs previous week">'+(diff>0?'+':'')+diff.toFixed(1)+' kg vs prev week</span>';}
+      var stepsD='';
+      if(stats.avgSteps!==null&&prevStats&&prevStats.avgSteps){var sd=stats.avgSteps-prevStats.avgSteps,spct=prevStats.avgSteps>0?Math.round((sd/prevStats.avgSteps)*100):0,ssign=sd>=0?'+':'';stepsD='<span class="weight-delta '+(sd>=0?'delta-loss':'delta-gain')+'" title="Step change vs previous week">'+ssign+sd.toLocaleString()+' steps ('+ssign+spct+'%) vs prev</span>';}
+      var avgW=stats.avgWeight!==null?stats.avgWeight.toFixed(1):'\u2014';
+      var totalC=stats.totalCal!==null?stats.totalCal.toLocaleString():'\u2014';
+      var avgSt=stats.avgSteps!==null?stats.avgSteps.toLocaleString():'\u2014';
+      var avgCalPerDay=(stats.totalCal!==null&&stats.loggedDays>0)?Math.round(stats.totalCal/stats.loggedDays):null;
+      var calVsGoal=avgCalPerDay!==null?avgCalPerDay-goalCal:null;
+      var calVsStr=calVsGoal!==null?(calVsGoal>=0?'+':'')+calVsGoal.toLocaleString()+' kcal/d':'';
+      var vsColor=calVsGoal===null?'var(--text-tertiary)':calVsGoal>0?'var(--text-danger)':'var(--text-success)';
+
+      var sec=document.createElement('div');sec.className='week-section'+(week.collapsed?' collapsed':'');
+      var dayRows=week.days.map(function(d,di){
+        var cal=parseInt(d.calories)||0,calPct=cal&&goalCal?Math.min((cal/goalCal)*100,100):0,calOver=cal>goalCal&&cal>0;
+        var calDiff=cal&&goalCal?cal-goalCal:null,diffStr=calDiff!==null?(calDiff>=0?'+'+calDiff.toLocaleString():calDiff.toLocaleString()):'-';
+        var dc=calDiff===null?'var(--text-tertiary)':calDiff>0?'var(--text-danger)':'var(--text-success)';
+        var stp=parseInt(d.steps)||0,stpPct=stp&&stepGoal?Math.min((stp/stepGoal)*100,100):0,stpMet=stp>=stepGoal&&stp>0;
+        return '<div class="day-row"><span class="day-lbl">'+d.day+'</span>'+
+          '<input class="day-inp" type="number" step="0.1" min="0" max="300" placeholder="kg" value="'+d.weight+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="weight">'+
+          '<div><input class="day-inp" type="number" step="1" min="0" max="20000" placeholder="kcal" value="'+d.calories+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="calories"><div class="bar-wrap"><div class="bar-fill '+(calOver?'bar-over':'bar-ok')+'" style="width:'+calPct+'%"></div></div></div>'+
+          '<div><input class="day-inp" type="number" step="1" min="0" max="100000" placeholder="steps" value="'+d.steps+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="steps"><div class="bar-wrap"><div class="bar-fill '+(stpMet?'bar-ok':'bar-over')+'" style="width:'+stpPct+'%"></div></div></div>'+
+          '<span class="vs-goal-cell" style="font-size:11px;font-weight:500;color:'+dc+';text-align:right;padding-right:2px">'+diffStr+'</span>'+
+          '<button class="clr-btn" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'"><i class="ti ti-x"></i></button></div>';
+      }).join('');
+
+      sec.innerHTML='<div class="week-header" data-pi="'+pi+'" data-wi="'+wi+'"><span class="week-title">'+wLabel+'</span>'+
+        '<div class="week-mini-stats">'+dHtml+stepsD+
+        '<span class="mini-stat"><i class="ti ti-scale" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgW+'</b>'+(stats.avgWeight!==null?' kg':'')+'</span>'+
+        '<span class="mini-stat"><i class="ti ti-flame" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+totalC+'</b>'+(stats.totalCal!==null?' kcal':'')+'</span>'+
+        '<span class="mini-stat"><i class="ti ti-shoe" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgSt+'</b>'+(stats.avgSteps!==null?'/d':'')+'</span>'+
+        '<i class="ti ti-chevron-down chevron"></i></div></div>'+
+        '<div class="week-body"><div class="col-headers"><div class="col-hdr">Day</div><div class="col-hdr">Weight</div><div class="col-hdr">Calories</div><div class="col-hdr">Steps</div><div class="col-hdr vs-goal-cell">Cal \u0394</div><div></div></div>'+
+        dayRows+'</div>'+
+        '<div class="week-summary">'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-scale" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg weight</div><div class="sum-val">'+avgW+'<span class="sum-unit">'+(stats.avgWeight!==null?'kg':'')+'</span></div><div class="sum-sub">'+(dHtml||'<span style="color:var(--text-tertiary)">\u2014</span>')+'</div></div>'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-flame" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg cal / day</div><div class="sum-val">'+(stats.totalCal!==null&&stats.loggedDays>0?Math.round(stats.totalCal/stats.loggedDays).toLocaleString():totalC)+'<span class="sum-unit">'+(stats.totalCal!==null?'kcal':'')+'</span></div><div class="sum-sub" style="color:'+vsColor+'">'+(calVsStr||'\u2014')+'</div></div>'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-shoe" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg steps/day</div><div class="sum-val">'+avgSt+'</div><div class="sum-sub">'+(stepsVsGoalStr(stats.avgSteps,stepGoal)||'<span style="color:var(--text-tertiary)">\u2014</span>')+'</div></div>'+
+        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-target" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Goals</div><div class="sum-val" style="font-size:12px;margin-top:2px"><i class="ti ti-flame" style="font-size:11px;color:var(--text-warning)"></i> '+goalCal.toLocaleString()+' kcal</div><div class="sum-sub"><i class="ti ti-shoe" style="font-size:10px;color:oklch(68% 0.14 250)"></i> '+stepGoal.toLocaleString()+' steps</div></div>'+
+        '</div>';
+      card.appendChild(sec);
+    });
+
+    var ar=document.createElement('div');ar.className='period-add-week-row';ar.style.cssText='padding:7px 1.25rem;border-top:0.5px solid var(--border-t)';
+    ar.innerHTML='<button class="add-btn" data-pi="'+pi+'" data-action="addweek"><i class="ti ti-plus"></i>Add week</button>';
+    card.appendChild(ar);app.appendChild(card);
+  });
+
+  var apw=document.createElement('div');apw.style.cssText='text-align:center;padding:.25rem 0 1rem';
+  apw.innerHTML='<button class="add-btn" id="add-period"><i class="ti ti-plus"></i>Add 4-week period</button>';
+  app.appendChild(apw);
+
+  app.querySelectorAll('.week-header').forEach(function(h){
+    h.addEventListener('click',function(){var pi=parseInt(h.dataset.pi),wi=parseInt(h.dataset.wi);data.periods[pi].weeks[wi].collapsed=!data.periods[pi].weeks[wi].collapsed;render()});
+  });
+  app.querySelectorAll('.day-inp').forEach(function(inp){
+    inp.addEventListener('change',function(e){var d=e.target.dataset;data.periods[parseInt(d.pi)].weeks[parseInt(d.wi)].days[parseInt(d.di)][d.field]=e.target.value;scheduleSave();render()});
+  });
+  app.querySelectorAll('.clr-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();var d=btn.dataset,day=data.periods[parseInt(d.pi)].weeks[parseInt(d.wi)].days[parseInt(d.di)];day.weight='';day.calories='';day.steps='';scheduleSave();render()});
+  });
+  app.querySelectorAll('[data-field="goal"]').forEach(function(sel){
+    sel.addEventListener('change',function(e){data.periods[parseInt(e.target.dataset.pi)].goal=e.target.value;scheduleSave();render()});
+  });
+  app.querySelectorAll('[data-field="calGoal"]').forEach(function(inp){
+    inp.addEventListener('change',function(e){var v=parseInt(e.target.value);if(!isNaN(v)&&v>0){data.periods[parseInt(e.target.dataset.pi)].calGoal=v;scheduleSave();render()}});
+  });
+  app.querySelectorAll('[data-field="stepGoal"]').forEach(function(inp){
+    inp.addEventListener('change',function(e){var v=parseInt(e.target.value);if(!isNaN(v)&&v>0){data.periods[parseInt(e.target.dataset.pi)].stepGoal=v;scheduleSave();render()}});
+  });
+  app.querySelectorAll('[data-action="addweek"]').forEach(function(btn){
+    btn.addEventListener('click',function(){data.periods[parseInt(btn.dataset.pi)].weeks.push(makeWeek());scheduleSave();render()});
+  });
+  app.querySelectorAll('[data-action="delete-period"]').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();var pi=parseInt(btn.dataset.pi);if(data.periods.length<=1)return;if(!isPeriodEmpty(pi))return;data.periods.splice(pi,1);scheduleSave();render();});
+  });
+  app.querySelectorAll('[data-action="toggle-period"]').forEach(function(el){
+    el.addEventListener('click',function(){var pi=parseInt(el.dataset.pi);data.periods[pi].collapsed=!data.periods[pi].collapsed;render()});
+  });
+  var ap=document.getElementById('add-period');
+  if(ap)ap.addEventListener('click',function(){data.periods.push(makePeriod());scheduleSave();render()});
+  app.querySelectorAll('[data-calc-pi]').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();openCalcModal(parseInt(btn.dataset.calcPi));});
+  });
+}
 function renderDash(app){
   var panel=document.createElement('div');panel.className='panel';
   var startW=getStartingWeight();
@@ -740,6 +905,7 @@ function renderDash(app){
   panel.innerHTML=startRow+thisRow+lastRow+chartsHtml+periodsHtml;
   app.appendChild(panel);
   setTimeout(buildCharts,60);
+  buildFullHistorySection(app);
 }
 
 function renderGuide(app){
@@ -876,6 +1042,79 @@ function renderNavDrawer(data,isTracker,activateTab){
     });
   });
 }
+function ensureTrackerDate(){
+  if(!window._trackerDate){
+    var t=isoDate(new Date());
+    if(daysBetween(window._appData.startDate,t)<0)t=window._appData.startDate;
+    window._trackerDate=t;
+  }
+}
+function shiftTrackerDate(deltaDays){
+  var iso=isoDate(addDays(window._trackerDate,deltaDays));
+  if(daysBetween(window._appData.startDate,iso)<0)return;
+  window._trackerDate=iso;
+  render();
+}
+function renderTrackerDaily(app,data){
+  ensureTrackerDate();
+  var slot=locateDaySlot(window._trackerDate);
+  if(!slot){window._trackerDate=data.startDate;slot=locateDaySlot(window._trackerDate);}
+  if(slot.extended)scheduleSave();
+  var period=data.periods[slot.pi],week=period.weeks[slot.wi],day=week.days[slot.di];
+  var goalCal=period.calGoal||2000,stepGoal=period.stepGoal||8000;
+  var dateObj=new Date(window._trackerDate);
+  var weekdayName=dateObj.toLocaleDateString('en-SE',{weekday:'long'});
+  var dateDisp=dateObj.toLocaleDateString('en-SE',{day:'numeric',month:'long',year:'numeric'});
+  var todayIso=isoDate(new Date());
+  var isToday=window._trackerDate===todayIso;
+  var atStart=daysBetween(data.startDate,window._trackerDate)<=0;
+  var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[period.goal]||'badge-maintain';
+  var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[period.goal]||'Maintain';
+  var cal=parseInt(day.calories)||0,calPct=cal&&goalCal?Math.min((cal/goalCal)*100,100):0,calOver=cal>goalCal&&cal>0;
+  var calDiff=cal&&goalCal?cal-goalCal:null,diffStr=calDiff!==null?((calDiff>=0?'+':'')+calDiff.toLocaleString()+' kcal vs goal'):'No entry yet';
+  var dc=calDiff===null?'var(--text-tertiary)':calDiff>0?'var(--text-danger)':'var(--text-success)';
+  var stp=parseInt(day.steps)||0,stpPct=stp&&stepGoal?Math.min((stp/stepGoal)*100,100):0,stpMet=stp>=stepGoal&&stp>0;
+
+  var card=document.createElement('div');card.className='panel daily-card';
+  card.innerHTML='<div class="daily-switcher">'+
+      '<button class="daily-nav-btn" id="day-prev" aria-label="Previous day"'+(atStart?' disabled':'')+'><i class="ti ti-chevron-left"></i></button>'+
+      '<div class="daily-switcher-mid"><div class="daily-date-row"><span class="daily-weekday">'+weekdayName+'</span>'+(isToday?'<span class="today-pill">Today</span>':'')+'</div>'+
+      '<div class="daily-date-sub">'+dateDisp+'</div></div>'+
+      '<button class="daily-nav-btn" id="day-next" aria-label="Next day"><i class="ti ti-chevron-right"></i></button>'+
+    '</div>'+
+    '<div class="daily-jump-row"><input type="date" class="field-inp" id="day-jump" value="'+window._trackerDate+'" min="'+data.startDate+'">'+
+      (isToday?'':'<button class="add-btn" id="day-today" style="padding:0 14px;height:38px"><i class="ti ti-calendar-event"></i>Today</button>')+
+    '</div>'+
+    '<div class="daily-period-context"><span class="goal-badge '+bc+'">'+bl+'</span><span>'+periodLabel(data.startDate,data.periods,slot.pi)+'</span></div>'+
+    '<div class="daily-fields">'+
+      '<div class="field-group"><label class="field-label" for="day-weight"><i class="ti ti-scale" style="font-size:12px"></i> Weight (kg)</label>'+
+      '<input class="field-inp daily-inp" id="day-weight" type="number" step="0.1" min="0" max="300" placeholder="e.g. 84.2" value="'+day.weight+'"></div>'+
+      '<div class="field-group"><label class="field-label" for="day-calories"><i class="ti ti-flame" style="font-size:12px"></i> Calories</label>'+
+      '<input class="field-inp daily-inp" id="day-calories" type="number" step="1" min="0" max="20000" placeholder="e.g. 2100" value="'+day.calories+'">'+
+      '<div class="bar-wrap"><div class="bar-fill '+(calOver?'bar-over':'bar-ok')+'" style="width:'+calPct+'%"></div></div>'+
+      '<div class="daily-field-sub" style="color:'+dc+'">'+diffStr+(calDiff!==null?' ('+goalCal.toLocaleString()+' kcal goal)':'')+'</div></div>'+
+      '<div class="field-group"><label class="field-label" for="day-steps"><i class="ti ti-shoe" style="font-size:12px"></i> Steps</label>'+
+      '<input class="field-inp daily-inp" id="day-steps" type="number" step="1" min="0" max="100000" placeholder="e.g. 9000" value="'+day.steps+'">'+
+      '<div class="bar-wrap"><div class="bar-fill '+(stpMet?'bar-ok':'bar-over')+'" style="width:'+stpPct+'%"></div></div>'+
+      '<div class="daily-field-sub">'+stp.toLocaleString()+' / '+stepGoal.toLocaleString()+' steps</div></div>'+
+    '</div>'+
+    '<div class="daily-actions"><button class="clr-btn" id="day-clear" style="width:auto;padding:0 14px;gap:6px"><i class="ti ti-x"></i>Clear day</button></div>';
+  app.appendChild(card);
+
+  document.getElementById('day-prev').addEventListener('click',function(){shiftTrackerDate(-1);});
+  document.getElementById('day-next').addEventListener('click',function(){shiftTrackerDate(1);});
+  var todayBtn=document.getElementById('day-today');
+  if(todayBtn)todayBtn.addEventListener('click',function(){window._trackerDate=todayIso;render();});
+  document.getElementById('day-jump').addEventListener('change',function(e){
+    var v=e.target.value;if(!v)return;
+    if(daysBetween(data.startDate,v)<0){e.target.value=window._trackerDate;return;}
+    window._trackerDate=v;render();
+  });
+  document.getElementById('day-weight').addEventListener('change',function(e){day.weight=e.target.value;scheduleSave();render();});
+  document.getElementById('day-calories').addEventListener('change',function(e){day.calories=e.target.value;scheduleSave();render();});
+  document.getElementById('day-steps').addEventListener('change',function(e){day.steps=e.target.value;scheduleSave();render();});
+  document.getElementById('day-clear').addEventListener('click',function(){day.weight='';day.calories='';day.steps='';scheduleSave();render();});
+}
 function render(){
   var data=window._appData;
   var app=document.getElementById('app');app.innerHTML='';
@@ -910,83 +1149,7 @@ function render(){
   if(data.showDash)renderDash(app);
   if(data.showGuide)renderGuide(app);
   if(data.showTrain)renderTraining(app);
-
-  data.periods.forEach(function(period,pi){
-    var bc={deficit:'badge-deficit',maintain:'badge-maintain',surplus:'badge-surplus'}[period.goal]||'badge-maintain';
-    var bl={deficit:'Deficit',maintain:'Maintain',surplus:'Surplus'}[period.goal]||'Maintain';
-    var pLabel='Period '+(pi+1)+' \u2014 '+periodLabel(data.startDate,data.periods,pi);
-    var stepGoal=period.stepGoal||8000;
-    var card=document.createElement('div');card.className='period-card'+(period.collapsed?' collapsed':'');
-    var isLastPeriod=(pi===data.periods.length-1);
-    var canDelete=isLastPeriod&&data.periods.length>1&&isPeriodEmpty(pi);
-    var deleteBtnHtml=canDelete?'<button class="icon-btn" data-action="delete-period" data-pi="'+pi+'" title="Remove this empty period" style="padding:4px 8px;font-size:11px;height:28px;color:var(--text-danger);border-color:var(--text-danger);opacity:0.7;flex-shrink:0"><i class="ti ti-trash" style="font-size:13px"></i></button>':'';
-    card.innerHTML='<div class="period-header">'+
-      '<div class="period-title" data-action="toggle-period" data-pi="'+pi+'"><i class="ti ti-chevron-down chevron" style="font-size:13px"></i><i class="ti ti-calendar" style="font-size:15px;color:var(--text-secondary)"></i><span>'+pLabel+'</span><span class="goal-badge '+bc+'">'+bl+'</span>'+deleteBtnHtml+'</div>'+
-      '<div class="period-goals-grid">'+
-        '<span class="goal-label"><i class="ti ti-flame" style="font-size:13px;vertical-align:-2px"></i> Calorie goal:</span>'+
-        '<div class="goal-row"><select class="goal-select" data-pi="'+pi+'" data-field="goal"><option value="deficit"'+(period.goal==='deficit'?' selected':'')+'>Deficit</option><option value="maintain"'+(period.goal==='maintain'?' selected':'')+'>Maintain</option><option value="surplus"'+(period.goal==='surplus'?' selected':'')+'>Surplus</option></select>'+
-        '<input class="goal-input" type="number" min="500" max="10000" step="50" value="'+period.calGoal+'" data-pi="'+pi+'" data-field="calGoal"> <span class="goal-label">kcal/day</span>'+
-        '<button class="icon-btn" style="padding:4px 9px;font-size:11px;height:30px;white-space:nowrap" data-calc-pi="'+pi+'" title="Calculate recommended daily calories"><i class="ti ti-calculator" style="font-size:12px"></i> Calculate</button></div>'+
-        '<span class="goal-label"><i class="ti ti-shoe" style="font-size:13px;vertical-align:-2px"></i> Step goal:</span>'+
-        '<div class="goal-row"><input class="goal-input" type="number" min="1000" max="50000" step="500" value="'+stepGoal+'" data-pi="'+pi+'" data-field="stepGoal" style="width:100px"> <span class="goal-label">steps/day</span></div>'+
-      '</div></div>';
-
-    period.weeks.forEach(function(week,wi){
-      var totalWi=weekIndexOffset(data.periods,pi,wi),stats=weekStats(week),goalCal=period.calGoal||2000;
-      var prevWeek=wi>0?period.weeks[wi-1]:(pi>0&&data.periods[pi-1].weeks.length?data.periods[pi-1].weeks[data.periods[pi-1].weeks.length-1]:null);
-      var prevStats=prevWeek?weekStats(prevWeek):null;
-      var wLabel=weekLabel(data.startDate,totalWi);
-      var dHtml='';
-      if(stats.avgWeight!==null&&prevStats&&prevStats.avgWeight){var diff=stats.avgWeight-prevStats.avgWeight;dHtml='<span class="weight-delta '+(diff<0?'delta-loss':'delta-gain')+'" title="Weight change vs previous week">'+(diff>0?'+':'')+diff.toFixed(1)+' kg vs prev week</span>';}
-      var stepsD='';
-      if(stats.avgSteps!==null&&prevStats&&prevStats.avgSteps){var sd=stats.avgSteps-prevStats.avgSteps,spct=prevStats.avgSteps>0?Math.round((sd/prevStats.avgSteps)*100):0,ssign=sd>=0?'+':'';stepsD='<span class="weight-delta '+(sd>=0?'delta-loss':'delta-gain')+'" title="Step change vs previous week">'+ssign+sd.toLocaleString()+' steps ('+ssign+spct+'%) vs prev</span>';}
-      var avgW=stats.avgWeight!==null?stats.avgWeight.toFixed(1):'\u2014';
-      var totalC=stats.totalCal!==null?stats.totalCal.toLocaleString():'\u2014';
-      var avgSt=stats.avgSteps!==null?stats.avgSteps.toLocaleString():'\u2014';
-      var avgCalPerDay=(stats.totalCal!==null&&stats.loggedDays>0)?Math.round(stats.totalCal/stats.loggedDays):null;
-      var calVsGoal=avgCalPerDay!==null?avgCalPerDay-goalCal:null;
-      var calVsStr=calVsGoal!==null?(calVsGoal>=0?'+':'')+calVsGoal.toLocaleString()+' kcal/d':'';
-      var vsColor=calVsGoal===null?'var(--text-tertiary)':calVsGoal>0?'var(--text-danger)':'var(--text-success)';
-
-      var sec=document.createElement('div');sec.className='week-section'+(week.collapsed?' collapsed':'');
-      var dayRows=week.days.map(function(d,di){
-        var cal=parseInt(d.calories)||0,calPct=cal&&goalCal?Math.min((cal/goalCal)*100,100):0,calOver=cal>goalCal&&cal>0;
-        var calDiff=cal&&goalCal?cal-goalCal:null,diffStr=calDiff!==null?(calDiff>=0?'+'+calDiff.toLocaleString():calDiff.toLocaleString()):'-';
-        var dc=calDiff===null?'var(--text-tertiary)':calDiff>0?'var(--text-danger)':'var(--text-success)';
-        var stp=parseInt(d.steps)||0,stpPct=stp&&stepGoal?Math.min((stp/stepGoal)*100,100):0,stpMet=stp>=stepGoal&&stp>0;
-        return '<div class="day-row"><span class="day-lbl">'+d.day+'</span>'+
-          '<input class="day-inp" type="number" step="0.1" min="0" max="300" placeholder="kg" value="'+d.weight+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="weight">'+
-          '<div><input class="day-inp" type="number" step="1" min="0" max="20000" placeholder="kcal" value="'+d.calories+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="calories"><div class="bar-wrap"><div class="bar-fill '+(calOver?'bar-over':'bar-ok')+'" style="width:'+calPct+'%"></div></div></div>'+
-          '<div><input class="day-inp" type="number" step="1" min="0" max="100000" placeholder="steps" value="'+d.steps+'" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'" data-field="steps"><div class="bar-wrap"><div class="bar-fill '+(stpMet?'bar-ok':'bar-over')+'" style="width:'+stpPct+'%"></div></div></div>'+
-          '<span class="vs-goal-cell" style="font-size:11px;font-weight:500;color:'+dc+';text-align:right;padding-right:2px">'+diffStr+'</span>'+
-          '<button class="clr-btn" data-pi="'+pi+'" data-wi="'+wi+'" data-di="'+di+'"><i class="ti ti-x"></i></button></div>';
-      }).join('');
-
-      sec.innerHTML='<div class="week-header" data-pi="'+pi+'" data-wi="'+wi+'"><span class="week-title">'+wLabel+'</span>'+
-        '<div class="week-mini-stats">'+dHtml+stepsD+
-        '<span class="mini-stat"><i class="ti ti-scale" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgW+'</b>'+(stats.avgWeight!==null?' kg':'')+'</span>'+
-        '<span class="mini-stat"><i class="ti ti-flame" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+totalC+'</b>'+(stats.totalCal!==null?' kcal':'')+'</span>'+
-        '<span class="mini-stat"><i class="ti ti-shoe" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgSt+'</b>'+(stats.avgSteps!==null?'/d':'')+'</span>'+
-        '<i class="ti ti-chevron-down chevron"></i></div></div>'+
-        '<div class="week-body"><div class="col-headers"><div class="col-hdr">Day</div><div class="col-hdr">Weight</div><div class="col-hdr">Calories</div><div class="col-hdr">Steps</div><div class="col-hdr vs-goal-cell">Cal \u0394</div><div></div></div>'+
-        dayRows+'</div>'+
-        '<div class="week-summary">'+
-        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-scale" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg weight</div><div class="sum-val">'+avgW+'<span class="sum-unit">'+(stats.avgWeight!==null?'kg':'')+'</span></div><div class="sum-sub">'+(dHtml||'<span style="color:var(--text-tertiary)">\u2014</span>')+'</div></div>'+
-        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-flame" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg cal / day</div><div class="sum-val">'+(stats.totalCal!==null&&stats.loggedDays>0?Math.round(stats.totalCal/stats.loggedDays).toLocaleString():totalC)+'<span class="sum-unit">'+(stats.totalCal!==null?'kcal':'')+'</span></div><div class="sum-sub" style="color:'+vsColor+'">'+(calVsStr||'\u2014')+'</div></div>'+
-        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-shoe" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Avg steps/day</div><div class="sum-val">'+avgSt+'</div><div class="sum-sub">'+(stepsVsGoalStr(stats.avgSteps,stepGoal)||'<span style="color:var(--text-tertiary)">\u2014</span>')+'</div></div>'+
-        '<div class="sum-card"><div class="sum-lbl"><i class="ti ti-target" style="font-size:11px;margin-right:2px;vertical-align:-1px"></i>Goals</div><div class="sum-val" style="font-size:12px;margin-top:2px"><i class="ti ti-flame" style="font-size:11px;color:var(--text-warning)"></i> '+goalCal.toLocaleString()+' kcal</div><div class="sum-sub"><i class="ti ti-shoe" style="font-size:10px;color:oklch(68% 0.14 250)"></i> '+stepGoal.toLocaleString()+' steps</div></div>'+
-        '</div>';
-      card.appendChild(sec);
-    });
-
-    var ar=document.createElement('div');ar.className='period-add-week-row';ar.style.cssText='padding:7px 1.25rem;border-top:0.5px solid var(--border-t)';
-    ar.innerHTML='<button class="add-btn" data-pi="'+pi+'" data-action="addweek"><i class="ti ti-plus"></i>Add week</button>';
-    card.appendChild(ar);app.appendChild(card);
-  });
-
-  var apw=document.createElement('div');apw.style.cssText='text-align:center;padding:.25rem 0 1rem';
-  apw.innerHTML='<button class="add-btn" id="add-period"><i class="ti ti-plus"></i>Add 4-week period</button>';
-  app.appendChild(apw);
+  if(isTracker)renderTrackerDaily(app,data);
 
   function activateTab(tab){
     data.showDash=tab==='dash';
@@ -1002,44 +1165,6 @@ function render(){
   if(ss)ss.addEventListener('click',function(){
     var n=document.getElementById('inp-name').value.trim(),dv=document.getElementById('inp-date').value;
     if(n!==undefined)data.name=n;if(dv)data.startDate=dv;data.showSettings=false;scheduleSave();render();
-  });
-  app.querySelectorAll('.week-header').forEach(function(h){
-    h.addEventListener('click',function(){var pi=parseInt(h.dataset.pi),wi=parseInt(h.dataset.wi);data.periods[pi].weeks[wi].collapsed=!data.periods[pi].weeks[wi].collapsed;render()});
-  });
-  app.querySelectorAll('.day-inp').forEach(function(inp){
-    inp.addEventListener('change',function(e){var d=e.target.dataset;data.periods[parseInt(d.pi)].weeks[parseInt(d.wi)].days[parseInt(d.di)][d.field]=e.target.value;scheduleSave();render()});
-  });
-  app.querySelectorAll('.clr-btn').forEach(function(btn){
-    btn.addEventListener('click',function(e){e.stopPropagation();var d=btn.dataset,day=data.periods[parseInt(d.pi)].weeks[parseInt(d.wi)].days[parseInt(d.di)];day.weight='';day.calories='';day.steps='';scheduleSave();render()});
-  });
-  app.querySelectorAll('[data-field="goal"]').forEach(function(sel){
-    sel.addEventListener('change',function(e){data.periods[parseInt(e.target.dataset.pi)].goal=e.target.value;scheduleSave();render()});
-  });
-  app.querySelectorAll('[data-field="calGoal"]').forEach(function(inp){
-    inp.addEventListener('change',function(e){var v=parseInt(e.target.value);if(!isNaN(v)&&v>0){data.periods[parseInt(e.target.dataset.pi)].calGoal=v;scheduleSave();render()}});
-  });
-  app.querySelectorAll('[data-field="stepGoal"]').forEach(function(inp){
-    inp.addEventListener('change',function(e){var v=parseInt(e.target.value);if(!isNaN(v)&&v>0){data.periods[parseInt(e.target.dataset.pi)].stepGoal=v;scheduleSave();render()}});
-  });
-  app.querySelectorAll('[data-action="addweek"]').forEach(function(btn){
-    btn.addEventListener('click',function(){data.periods[parseInt(btn.dataset.pi)].weeks.push(makeWeek());scheduleSave();render()});
-  });
-  app.querySelectorAll('[data-action="delete-period"]').forEach(function(btn){
-    btn.addEventListener('click',function(e){e.stopPropagation();var pi=parseInt(btn.dataset.pi);if(data.periods.length<=1)return;if(!isPeriodEmpty(pi))return;data.periods.splice(pi,1);scheduleSave();render();});
-  });
-  app.querySelectorAll('[data-action="toggle-period"]').forEach(function(el){
-    el.addEventListener('click',function(){var pi=parseInt(el.dataset.pi);data.periods[pi].collapsed=!data.periods[pi].collapsed;render()});
-  });
-  var ap=document.getElementById('add-period');
-  if(ap)ap.addEventListener('click',function(){data.periods.push(makePeriod());scheduleSave();render()});
-
-  // Calorie calculator buttons
-  app.querySelectorAll('[data-calc-pi]').forEach(function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      var pi=parseInt(btn.dataset.calcPi);
-      openCalcModal(pi);
-    });
   });
 }
 
