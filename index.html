@@ -859,11 +859,10 @@ function renderDash(app){
 
   // ── Starting weight — standalone ──
   var startRow='<div class="dash-section-title">START</div>'+
-    '<div class="stat-grid-1" style="margin-bottom:0"><div class="stat-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">'+
-    '<div><div class="stat-card-lbl"><i class="ti ti-calendar-stats" style="font-size:13px"></i>Starting weight</div>'+
+    '<div class="stat-grid-1" style="margin-bottom:0"><div class="stat-card">'+
+    '<div class="stat-card-lbl"><i class="ti ti-calendar-stats" style="font-size:13px"></i>Starting weight</div>'+
     '<div class="stat-card-val">'+(startW!==null?startW.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(startW!==null?'kg':'')+'</span></div>'+
-    '<div class="stat-card-sub" style="color:var(--text-tertiary)">'+(startW!==null?'Based on your first logged week':'Log weight to set your starting point')+'</div></div>'+
-    (startW!==null&&totalDiff!==null?'<div style="text-align:right"><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">Total change</div>'+weightDeltaPill(totalDiff)+'</div>':'')+
+    '<div class="stat-card-sub">'+(startW!==null&&totalDiff!==null?weightDeltaPill(totalDiff)+' <span style="color:var(--text-tertiary)">since your first logged week</span>':'<span style="color:var(--text-tertiary)">'+(startW!==null?'Based on your first logged week':'Log weight to set your starting point')+'</span>')+'</div>'+
     '</div></div>';
 
   // ── This week ──
