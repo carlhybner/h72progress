@@ -935,63 +935,87 @@ function renderGuide(app){
     '<div style="font-size:15px;font-weight:600;color:oklch(68% 0.14 250);margin-bottom:1rem;display:flex;align-items:center;gap:8px"><i class="ti ti-book" style="font-size:17px;color:var(--text-secondary)"></i>How to use H72 Progress</div>'+
 
     '<div class="guide-section">'+
-    '<div class="guide-section-title"><i class="ti ti-settings" style="font-size:15px;color:var(--text-secondary)"></i>1. First-time setup</div>'+
+    '<div class="guide-section-title"><i class="ti ti-menu-2" style="font-size:15px;color:var(--text-secondary)"></i>1. Getting around</div>'+
     '<div class="guide-steps">'+
-    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Click <strong>Settings</strong> in the top bar. Enter your name and set the <strong>Monday date</strong> for the first week you want to track. Click Save.</div></div>'+
-    '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body">In your first <strong>Period</strong>, choose a goal type — <strong>Deficit</strong> (losing weight), <strong>Maintain</strong> (staying the same), or <strong>Surplus</strong> (gaining). Then set your daily calorie and step targets.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Tap the <strong>menu icon</strong> (top-left) to open the navigation drawer. This is how you move between every section of the app.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body"><strong>Your day</strong> — log today\'s weight, calories, and steps. This is the screen you\'ll use daily, and it\'s always where the app opens.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-body"><strong>Dashboard</strong> — your at-a-glance summary: starting weight, this week, last full week, and trend charts.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">4</div><div class="guide-step-body"><strong>History &amp; Periods</strong> — every week you\'ve ever logged, fully editable, plus period goal settings and the calorie calculator.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">5</div><div class="guide-step-body"><strong>Training</strong> — programs, exercise library, session logging, and personal bests.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">6</div><div class="guide-step-body"><strong>Settings</strong> — your name and the start date of your very first tracked week.</div></div>'+
     '</div>'+
-    '<div class="guide-tip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>A period is 4 weeks long. At the end of each period, add a new one and set new goals if needed.</div>'+
     '</div>'+
 
     '<div class="guide-section">'+
-    '<div class="guide-section-title"><i class="ti ti-pencil" style="font-size:15px;color:var(--text-secondary)"></i>2. Daily logging</div>'+
+    '<div class="guide-section-title"><i class="ti ti-settings" style="font-size:15px;color:var(--text-secondary)"></i>2. First-time setup</div>'+
     '<div class="guide-steps">'+
-    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Click on a week to expand it. You\'ll see one row per day with three input fields: <strong>Weight (kg)</strong>, <strong>Calories (kcal)</strong>, and <strong>Steps</strong>.</div></div>'+
-    '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body">Enter your <strong>morning weight</strong> (before eating, after waking up gives the most consistent readings).</div></div>'+
-    '<div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-body">Log your <strong>total calories</strong> for the day and your <strong>step count</strong> from your phone or fitness tracker.</div></div>'+
-    '<div class="guide-step"><div class="guide-step-num">4</div><div class="guide-step-body">The small <strong>progress bar</strong> under each field fills as you approach your goal. Use the <strong>&times;</strong> button to clear a row if you made a mistake.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Open the menu and go to <strong>Settings</strong>. Enter your name and set the <strong>Monday date</strong> for the first week you want to track, then Save.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body">Go to <strong>History &amp; Periods</strong> and set your first period\'s goal — <strong>Deficit</strong> (losing weight), <strong>Maintain</strong>, or <strong>Surplus</strong> (gaining) — plus a daily calorie and step target. Use the <strong>Calculate</strong> button if you\'d like a suggested calorie target based on your weight, training frequency, and steps.</div></div>'+
     '</div>'+
-    '<div class="guide-tip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>You don\'t need to log every day. The averages automatically adjust based on the days you have logged. The calorie summary shows <strong>avg cal/day</strong> so you can compare directly to your daily goal.</div>'+
+    '<div class="guide-tip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>A period is 4 weeks by default, but weeks can be added to it at any time — nothing forces a period to stay exactly 4 weeks long.</div>'+
     '</div>'+
 
     '<div class="guide-section">'+
-    '<div class="guide-section-title"><i class="ti ti-eye" style="font-size:15px;color:var(--text-secondary)"></i>3. Reading the progress bars</div>'+
+    '<div class="guide-section-title"><i class="ti ti-clipboard-list" style="font-size:15px;color:var(--text-secondary)"></i>3. Logging in Your day</div>'+
+    '<div class="guide-steps">'+
+    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Your day always opens on <strong>today</strong>, showing three fields: <strong>Weight (kg)</strong>, <strong>Calories</strong>, and <strong>Steps</strong>, plus a badge showing the goal for the period that day falls in.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body">Use the <strong>&lsaquo; &rsaquo; arrows</strong> to move a day at a time, or tap the <strong>date field</strong> to jump straight to any day. A <strong>Today</strong> button appears whenever you\'re viewing a different day, to jump straight back.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-body">Fields save automatically as soon as you enter a value — there\'s no separate save button. The <strong>sync dot</strong> in the header shows the save status.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">4</div><div class="guide-step-body">Use <strong>Clear day</strong> at the bottom to wipe all three fields for that day if you made a mistake.</div></div>'+
+    '</div>'+
+    '<div class="guide-tip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>If you navigate to a day beyond your last logged week, you\'ll be asked whether to <strong>add another week</strong> to your current period or <strong>start a new 4-week period</strong> (with its own goals) — nothing is created automatically without you choosing.</div>'+
+    '</div>'+
+
+    '<div class="guide-section">'+
+    '<div class="guide-section-title"><i class="ti ti-eye" style="font-size:15px;color:var(--text-secondary)"></i>4. Reading the progress bars</div>'+
     '<div class="guide-legend">'+
     '<div class="guide-legend-row"><span class="legend-swatch" style="background:oklch(68% 0.10 175)"></span><strong>Sage — Calories:</strong> you are under your daily calorie goal (on track)</div>'+
     '<div class="guide-legend-row"><span class="legend-swatch" style="background:oklch(63% 0.18 25)"></span><strong>Red — Calories:</strong> you have exceeded your daily calorie goal</div>'+
     '<div class="guide-legend-row"><span class="legend-swatch" style="background:oklch(63% 0.18 25)"></span><strong>Red — Steps:</strong> you have not yet reached your daily step goal</div>'+
     '<div class="guide-legend-row"><span class="legend-swatch" style="background:oklch(68% 0.10 175)"></span><strong>Green — Steps:</strong> you have met or exceeded your daily step goal</div>'+
     '</div>'+
+    '<div class="guide-tip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>These same colors are used consistently in Your day, History &amp; Periods, and the Dashboard charts.</div>'+
     '</div>'+
 
     '<div class="guide-section">'+
-    '<div class="guide-section-title"><i class="ti ti-layout-dashboard" style="font-size:15px;color:var(--text-secondary)"></i>4. Reading the dashboard</div>'+
+    '<div class="guide-section-title"><i class="ti ti-layout-dashboard" style="font-size:15px;color:var(--text-secondary)"></i>5. Reading the dashboard</div>'+
     '<div class="guide-steps">'+
-    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body"><strong>Start</strong> — shows the average weight from your very first logged week. This is your baseline. The "Total change" pill shows how much you\'ve lost or gained since then.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body"><strong>Start</strong> — the average weight from your very first logged week. This is your baseline, with the total change since then shown alongside it.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body"><strong>This week</strong> — live averages for the current calendar week. Steps shows a comparison to last full week so you can see your trend in real time.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-body"><strong>Last full week</strong> — the most recently completed week. Weight shows change since start; steps shows change vs the week before that.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">4</div><div class="guide-step-body"><strong>Trends charts</strong> — the weight chart shows your weekly average weight as a line over time. The steps chart uses <strong style="color:oklch(68% 0.10 175)">green bars</strong> when you met your step goal that week and <strong style="color:oklch(63% 0.18 25)">red bars</strong> when you fell short.</div></div>'+
-    '<div class="guide-step"><div class="guide-step-num">5</div><div class="guide-step-body"><strong>Change per period</strong> — once a period has at least 2 weeks of data, it appears here showing start weight, end weight, and total change for that 4-week block.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">5</div><div class="guide-step-body"><strong>Change per period</strong> — once a period has at least 2 weeks of data, it appears here showing start weight, end weight, and total change for that period.</div></div>'+
     '</div>'+
     '</div>'+
 
     '<div class="guide-section">'+
-    '<div class="guide-section-title"><i class="ti ti-barbell" style="font-size:15px;color:var(--text-secondary)"></i>5. Training</div>'+
+    '<div class="guide-section-title"><i class="ti ti-history" style="font-size:15px;color:var(--text-secondary)"></i>6. History &amp; Periods</div>'+
     '<div class="guide-steps">'+
-    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Click <strong>Training</strong> in the top bar to open the training module. It has four tabs: <strong>Progress</strong>, <strong>Exercise Library</strong>, <strong>Routine Builder</strong>, and <strong>Session Log</strong>.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">This is the full record of everything you\'ve logged, organized by period and week. Tap a period or a week header to expand or collapse it.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body">Each period has its own <strong>goal type, calorie target, and step target</strong> — editable any time, with the same <strong>Calculate</strong> button available here as during first-time setup.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-body">Every day within a week can be edited directly here too — it\'s the same data as Your day, just shown all at once instead of one day at a time.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">4</div><div class="guide-step-body">Use <strong>Add week</strong> to extend a period, and <strong>Add 4-week period</strong> to start a new one. A small trash icon appears next to a week to remove it, but only when it\'s the very last week you have <em>and</em> it\'s still empty — this protects against accidentally shifting the dates of weeks you\'ve already logged. The same protection applies to removing a period.</div></div>'+
+    '</div>'+
+    '</div>'+
+
+    '<div class="guide-section">'+
+    '<div class="guide-section-title"><i class="ti ti-barbell" style="font-size:15px;color:var(--text-secondary)"></i>7. Training</div>'+
+    '<div class="guide-steps">'+
+    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Open the menu and select <strong>Training</strong>. It has four tabs: <strong>Progress</strong>, <strong>Exercise Library</strong>, <strong>Routine Builder</strong>, and <strong>Session Log</strong>.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body"><strong>Exercise Library</strong> — search the built-in database and save exercises to your account. You can also add fully custom exercises.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-body"><strong>Routine Builder</strong> — create training programs (e.g. "PPL" or "3-Day Split") and add sessions inside them (e.g. "Push Day", "Pull Day", "Legs"). Each session can have exercises with target sets, reps, and weight.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">4</div><div class="guide-step-body"><strong>Session Log</strong> — select a session from your program, fill in actual weights and reps performed, and click Log Session. A PB notification will pop up if you set a new personal record.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">5</div><div class="guide-step-body">You can also <strong>import from StrengthLog</strong> by exporting a CSV from the StrengthLog app and importing it here — all your historical sessions and PBs will be populated instantly.</div></div>'+
     '</div>'+
-    '<div class="guide-tip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>The <strong>Progress tab</strong> shows your PB (heaviest 1-rep weight) per exercise, volume trend per session, muscle group trends, and the last 10 sessions per exercise. Training trend charts and period summaries are also visible on the <strong>Dashboard</strong>.</div>'+
+    '<div class="guide-tip"><i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>The <strong>Progress tab</strong> shows your PB (heaviest 1-rep weight) per exercise, volume trend per session, muscle group trends, and the last 10 sessions per exercise.</div>'+
     '</div>'+
 
     '<div class="guide-section">'+
-    '<div class="guide-section-title"><i class="ti ti-device-floppy" style="font-size:15px;color:var(--text-secondary)"></i>6. Saving &amp; sync</div>'+
+    '<div class="guide-section-title"><i class="ti ti-device-floppy" style="font-size:15px;color:var(--text-secondary)"></i>8. Saving &amp; sync</div>'+
     '<div class="guide-steps">'+
-    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Your data is saved automatically to the cloud every time you make a change. The small <strong>dot</strong> in the top bar shows the sync status — green means saved, orange means saving.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-body">Your data is saved automatically to the cloud every time you make a change. The small <strong>dot</strong> in the header shows the sync status — blue means saved, amber means it\'s currently saving, and red means a save failed.</div></div>'+
     '<div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-body">Because data is stored in the cloud, you can log in from any device — phone, tablet, or computer — and your data will always be up to date.</div></div>'+
+    '<div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-body">If you\'ve added H72 to your phone\'s Home Screen and a recent update doesn\'t seem to show up, tap the <strong>refresh icon</strong> next to sign-out in the header — it forces a fresh copy instead of reusing a cached one.</div></div>'+
     '</div>'+
     '</div>';
 
