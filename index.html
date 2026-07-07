@@ -126,7 +126,7 @@
   .app-logo img { width: 34px; height: 34px; object-fit: contain; filter: hue-rotate(36deg) saturate(0.85) brightness(1.05); border-radius: 50%; }
   .app-logo-text { display: flex; flex-direction: column; }
   .app-logo-name { display: block; font-family: var(--font-heading); font-weight: 800; font-size: 17px; letter-spacing: -.01em; color: var(--text-primary); }
-  .app-logo-sub { display: none; }
+  .app-logo-sub { display: block; font-size: 10px; color: var(--text-tertiary); font-family: var(--font-body); font-weight: 500; letter-spacing: .01em; line-height: 1.2; }
   /* ── Hamburger button ── */
   .hamburger-btn { background: transparent; border: 1px solid var(--border-p); border-radius: var(--radius-pill); color: var(--text-primary); width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: background-color .15s var(--ease), border-color .15s var(--ease); }
   .hamburger-btn:hover { background: var(--bg-secondary); }
@@ -1215,7 +1215,7 @@ function render(){
   var hdr=document.createElement('div');hdr.className='app-header';
   hdr.innerHTML='<div class="header-left">'+
     '<button class="hamburger-btn" id="nav-toggle" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu"><i class="ti ti-menu-2"></i></button>'+
-    '<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72"><div class="app-logo-text"><span class="app-logo-name">H72</span></div></div>'+
+    '<div class="app-logo"><img src="'+LOGO_URI+'" alt="H72"><div class="app-logo-text"><span class="app-logo-name">H72</span><span class="app-logo-sub">Your daily tracker</span></div></div>'+
     '</div>'+
     '<div class="header-spacer"></div>'+
     '<div class="header-right">'+
