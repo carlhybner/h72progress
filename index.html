@@ -562,7 +562,14 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('loading-screen').style.display='flex';
     document.getElementById('main-app').style.display='none';
     const remote=await window._loadFromFirebase(user.uid);
-    if(remote){window._appData=remote;}
+    if(remote){
+      window._appData=remote;
+      // Returning user with existing data: always land on "Your day", regardless of last-viewed tab.
+      window._appData.showDash=false;
+      window._appData.showHistory=false;
+      window._appData.showGuide=false;
+      window._appData.showSettings=false;
+    }
     else{const t=new Date(),dow=(t.getDay()+6)%7,m=new Date(t);m.setDate(t.getDate()-dow);window._appData={name:'',startDate:m.toISOString().slice(0,10),showSettings:true,showDash:false,showGuide:false,showTrain:false,showHistory:false,periods:[makePeriod()]};}
     window._appData.periods.forEach(function(p){if(!p.stepGoal)p.stepGoal=8000;});
     if(window._appData.showGuide===undefined)window._appData.showGuide=false;
@@ -1243,6 +1250,7 @@ function render(){
     data.showGuide=tab==='guide';
     data.showTrain=tab==='train';
     data.showSettings=tab==='settings';
+    if(tab===null)window._trackerDate=isoDate(new Date());
     render();
   }
   document.getElementById('signout-btn').addEventListener('click',function(){if(window._demoMode){exitDemo();}else if(window._signOut){window._signOut();}});
@@ -1251,7 +1259,7 @@ function render(){
   var ss=document.getElementById('save-settings');
   if(ss)ss.addEventListener('click',function(){
     var n=document.getElementById('inp-name').value.trim(),dv=document.getElementById('inp-date').value;
-    if(n!==undefined)data.name=n;if(dv)data.startDate=dv;data.showSettings=false;scheduleSave();render();
+    if(n!==undefined)data.name=n;if(dv)data.startDate=dv;data.showSettings=false;window._trackerDate=isoDate(new Date());scheduleSave();render();
   });
 }
 
