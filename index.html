@@ -1224,7 +1224,7 @@ function render(){
     '<div class="header-right">'+
     '<span id="sync-dot" class="sync-dot" title="Saved"></span>'+
     '<button class="hamburger-btn" id="refresh-btn" aria-label="Refresh app" title="Refresh app"><i class="ti ti-refresh"></i></button>'+
-    '<button class="signout-btn" id="signout-btn" title="'+(window._demoMode?'Exit demo':'Sign out')+'"><i class="ti ti-'+(window._demoMode?'x':'logout')+'"></i>'+(window._demoMode?' Exit demo':'')+'</button>'+
+    '<button class="'+(window._demoMode?'signout-btn':'hamburger-btn')+'" id="signout-btn" title="'+(window._demoMode?'Exit demo':'Sign out')+'"><i class="ti ti-'+(window._demoMode?'x':'logout')+'"></i>'+(window._demoMode?' Exit demo':'')+'</button>'+
     '</div>';
   if(window._demoMode){
     var banner=document.createElement('div');banner.className='demo-banner';
