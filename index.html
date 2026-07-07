@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>H72 Progress</title>
 <!-- PWA / iOS home screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -862,17 +865,6 @@ function renderDash(app){
   var totalDiff=(startW!==null&&lastStats.avgWeight!==null)?(lastStats.avgWeight-startW):null;
   // Steps comparison: this week vs last full week
   var thisVsLastSteps=(curStats.avgSteps!==null&&lastStats.avgSteps!==null)?stepsDeltaPill(curStats.avgSteps,lastStats.avgSteps):'';
-  // Avg calories/day for this week and last full week, compared against each week's period goal
-  var curGoal=info.currentIdx>=0?(allWeeks[info.currentIdx].period.calGoal||2000):2000;
-  var lastGoal=info.lastFullIdx>=0?(allWeeks[info.lastFullIdx].period.calGoal||2000):2000;
-  var curAvgCal=(curStats.totalCal!==null&&curStats.loggedDays>0)?Math.round(curStats.totalCal/curStats.loggedDays):null;
-  var lastAvgCal=(lastStats.totalCal!==null&&lastStats.loggedDays>0)?Math.round(lastStats.totalCal/lastStats.loggedDays):null;
-  var curCalDiff=curAvgCal!==null?curAvgCal-curGoal:null;
-  var curCalVsStr=curCalDiff!==null?(curCalDiff>=0?'+':'')+curCalDiff.toLocaleString()+' kcal/d vs goal':'';
-  var curCalColor=curCalDiff===null?'var(--text-tertiary)':curCalDiff>0?'var(--text-danger)':'var(--text-success)';
-  var lastCalDiff=lastAvgCal!==null?lastAvgCal-lastGoal:null;
-  var lastCalVsStr=lastCalDiff!==null?(lastCalDiff>=0?'+':'')+lastCalDiff.toLocaleString()+' kcal/d vs goal':'';
-  var lastCalColor=lastCalDiff===null?'var(--text-tertiary)':lastCalDiff>0?'var(--text-danger)':'var(--text-success)';
 
   // ── Starting weight — standalone ──
   var startRow='<div class="dash-section-title">START</div>'+
@@ -884,13 +876,10 @@ function renderDash(app){
 
   // ── This week ──
   var thisRow='<div class="divider"></div><div class="dash-section-title">THIS WEEK</div>'+
-    '<div class="stat-grid-3">'+
+    '<div class="stat-grid-2">'+
     '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-scale" style="font-size:13px"></i>Avg weight</div>'+
     '<div class="stat-card-val">'+(curStats.avgWeight!==null?curStats.avgWeight.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(curStats.avgWeight!==null?'kg':'')+'</span></div>'+
     '<div class="stat-card-sub" style="color:var(--text-tertiary)">'+(curStats.avgWeight!==null?'Current week average':'No data yet')+'</div></div>'+
-    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-flame" style="font-size:13px"></i>Avg cal / day</div>'+
-    '<div class="stat-card-val">'+(curAvgCal!==null?curAvgCal.toLocaleString():'&mdash;')+'<span class="stat-card-unit">'+(curAvgCal!==null?'kcal':'')+'</span></div>'+
-    '<div class="stat-card-sub" style="color:'+curCalColor+'">'+(curCalVsStr||'<span style="color:var(--text-tertiary)">No data yet</span>')+'</div></div>'+
     '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-shoe" style="font-size:13px"></i>Avg steps / day</div>'+
     '<div class="stat-card-val">'+(curStats.avgSteps!==null?curStats.avgSteps.toLocaleString():'&mdash;')+'<span class="stat-card-unit">'+(curStats.avgSteps!==null?'/day':'')+'</span></div>'+
     '<div class="stat-card-sub">'+(thisVsLastSteps?thisVsLastSteps+' <span style="color:var(--text-tertiary)">vs last week</span>':'<span style="color:var(--text-tertiary)">vs last full week</span>')+'</div></div>'+
@@ -898,13 +887,10 @@ function renderDash(app){
 
   // ── Last full week ──
   var lastRow='<div class="divider"></div><div class="dash-section-title">LAST FULL WEEK</div>'+
-    '<div class="stat-grid-3">'+
+    '<div class="stat-grid-2">'+
     '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-scale" style="font-size:13px"></i>Avg weight</div>'+
     '<div class="stat-card-val">'+(lastStats.avgWeight!==null?lastStats.avgWeight.toFixed(1):'&mdash;')+'<span class="stat-card-unit">'+(lastStats.avgWeight!==null?'kg':'')+'</span></div>'+
     '<div class="stat-card-sub">'+(totalDiff!==null?weightDeltaPill(totalDiff)+' <span style="color:var(--text-tertiary)">since start</span>':'<span style="color:var(--text-tertiary)">vs start</span>')+'</div></div>'+
-    '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-flame" style="font-size:13px"></i>Avg cal / day</div>'+
-    '<div class="stat-card-val">'+(lastAvgCal!==null?lastAvgCal.toLocaleString():'&mdash;')+'<span class="stat-card-unit">'+(lastAvgCal!==null?'kcal':'')+'</span></div>'+
-    '<div class="stat-card-sub" style="color:'+lastCalColor+'">'+(lastCalVsStr||'<span style="color:var(--text-tertiary)">No data yet</span>')+'</div></div>'+
     '<div class="stat-card"><div class="stat-card-lbl"><i class="ti ti-shoe" style="font-size:13px"></i>Avg steps / day</div>'+
     '<div class="stat-card-val">'+(lastStats.avgSteps!==null?lastStats.avgSteps.toLocaleString():'&mdash;')+'<span class="stat-card-unit">'+(lastStats.avgSteps!==null?'/day':'')+'</span></div>'+
     '<div class="stat-card-sub">'+(lastStats.avgSteps!==null&&prevSteps!==null?stepsDeltaPill(lastStats.avgSteps,prevSteps)+' <span style="color:var(--text-tertiary)">vs prev</span>':'<span style="color:var(--text-tertiary)">vs prev week</span>')+'</div></div>'+
@@ -1237,6 +1223,7 @@ function render(){
     '<div class="header-spacer"></div>'+
     '<div class="header-right">'+
     '<span id="sync-dot" class="sync-dot" title="Saved"></span>'+
+    '<button class="hamburger-btn" id="refresh-btn" aria-label="Refresh app" title="Refresh app"><i class="ti ti-refresh"></i></button>'+
     '<button class="signout-btn" id="signout-btn" title="'+(window._demoMode?'Exit demo':'Sign out')+'"><i class="ti ti-'+(window._demoMode?'x':'logout')+'"></i>'+(window._demoMode?' Exit demo':'')+'</button>'+
     '</div>';
   if(window._demoMode){
@@ -1271,6 +1258,10 @@ function render(){
     render();
   }
   document.getElementById('signout-btn').addEventListener('click',function(){if(window._demoMode){exitDemo();}else if(window._signOut){window._signOut();}});
+  document.getElementById('refresh-btn').addEventListener('click',function(){
+    var base=window.location.href.split('#')[0].split('?')[0];
+    window.location.href=base+'?_r='+Date.now();
+  });
   renderNavDrawer(data,isTracker,activateTab);
   document.getElementById('nav-toggle').addEventListener('click',function(){window._navOpen?closeNavDrawer():openNavDrawer();});
   var ss=document.getElementById('save-settings');
