@@ -169,6 +169,9 @@
   .daily-inp { height: 46px; font-size: 17px; }
   .daily-field-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
   .daily-actions { display: flex; align-items: center; justify-content: center; margin-top: 18px; }
+  .extend-prompt { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 8px 0 4px; }
+  .extend-prompt-icon { width: 44px; height: 44px; border-radius: var(--radius-pill); background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 2px; }
+  .extend-prompt-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; max-width: 320px; }
 
   /* keep .icon-btn for calc button and delete-period button inside cards */
   .icon-btn { border: 1px solid var(--border-s); border-radius: var(--radius-pill); background: transparent; color: var(--text-secondary); padding: 7px 13px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; transition: background-color .15s var(--ease), color .15s var(--ease); }
@@ -604,24 +607,20 @@ function makePeriod(){return{goal:'maintain',calGoal:2000,stepGoal:8000,collapse
 /* ── Date <-> {period,week,day} mapping for the daily-first tracker ── */
 function isoDate(d){var dt=(d instanceof Date)?d:new Date(d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
 function daysBetween(a,b){var A=new Date(a);A.setHours(0,0,0,0);var B=new Date(b);B.setHours(0,0,0,0);return Math.round((B-A)/86400000);}
-// Locate {pi,wi,di} for an ISO date string. Auto-extends weeks onto the last
-// period (same as clicking "Add week") if the date is beyond existing data.
-// Returns null if the date is before the app's startDate.
+// Locate {pi,wi,di} for an ISO date string. Read-only — returns null if the
+// date is before the app's startDate, or if that week hasn't been created
+// yet (the caller should prompt the user to add a week or a new period).
 function locateDaySlot(dateStr){
   var data=window._appData;
   var offset=daysBetween(data.startDate,dateStr);
   if(offset<0)return null;
   var totalWeekIdx=Math.floor(offset/7),di=offset%7;
   var totalWeeks=0;data.periods.forEach(function(p){totalWeeks+=p.weeks.length;});
-  var extended=false,guard=0;
-  while(totalWeekIdx>=totalWeeks&&guard<520){
-    data.periods[data.periods.length-1].weeks.push(makeWeek());
-    totalWeeks++;guard++;extended=true;
-  }
+  if(totalWeekIdx>=totalWeeks)return null;
   var idx=0;
   for(var pi=0;pi<data.periods.length;pi++){
     var wlen=data.periods[pi].weeks.length;
-    if(totalWeekIdx<idx+wlen)return{pi:pi,wi:totalWeekIdx-idx,di:di,extended:extended};
+    if(totalWeekIdx<idx+wlen)return{pi:pi,wi:totalWeekIdx-idx,di:di};
     idx+=wlen;
   }
   return null;
@@ -1068,11 +1067,47 @@ function shiftTrackerDate(deltaDays){
   window._trackerDate=iso;
   render();
 }
+function renderWeekExtendPrompt(app,data){
+  var dateObj=new Date(window._trackerDate);
+  var weekdayName=dateObj.toLocaleDateString('en-SE',{weekday:'long'});
+  var dateDisp=dateObj.toLocaleDateString('en-SE',{day:'numeric',month:'long',year:'numeric'});
+  var lastPeriodNum=data.periods.length;
+  var card=document.createElement('div');card.className='panel daily-card';
+  card.innerHTML='<div class="daily-switcher">'+
+      '<button class="daily-nav-btn" id="day-prev" aria-label="Previous day"><i class="ti ti-chevron-left"></i></button>'+
+      '<div class="daily-switcher-mid"><div class="daily-date-row"><span class="daily-weekday">'+weekdayName+'</span></div>'+
+      '<div class="daily-date-sub">'+dateDisp+'</div></div>'+
+      '<div style="width:44px"></div>'+
+    '</div>'+
+    '<div class="daily-jump-row"><input type="date" class="field-inp" id="day-jump" value="'+window._trackerDate+'" min="'+data.startDate+'"></div>'+
+    '<div class="extend-prompt">'+
+      '<div class="extend-prompt-icon"><i class="ti ti-calendar-plus"></i></div>'+
+      '<div class="extend-prompt-text">This week hasn\u2019t been created yet. How would you like to add it?</div>'+
+      '<button class="add-btn" id="extend-add-week" style="width:100%;justify-content:center;padding:10px 0"><i class="ti ti-plus"></i>Add another week to Period '+lastPeriodNum+'</button>'+
+      '<button class="add-btn" id="extend-add-period" style="width:100%;justify-content:center;padding:10px 0"><i class="ti ti-calendar-plus"></i>Start a new 4-week period</button>'+
+    '</div>';
+  app.appendChild(card);
+
+  document.getElementById('day-prev').addEventListener('click',function(){shiftTrackerDate(-1);});
+  document.getElementById('day-jump').addEventListener('change',function(e){
+    var v=e.target.value;if(!v)return;
+    if(daysBetween(data.startDate,v)<0){e.target.value=window._trackerDate;return;}
+    window._trackerDate=v;render();
+  });
+  document.getElementById('extend-add-week').addEventListener('click',function(){
+    data.periods[data.periods.length-1].weeks.push(makeWeek());
+    scheduleSave();render();
+  });
+  document.getElementById('extend-add-period').addEventListener('click',function(){
+    data.periods.push(makePeriod());
+    scheduleSave();render();
+  });
+}
 function renderTrackerDaily(app,data){
   ensureTrackerDate();
+  if(daysBetween(data.startDate,window._trackerDate)<0)window._trackerDate=data.startDate;
   var slot=locateDaySlot(window._trackerDate);
-  if(!slot){window._trackerDate=data.startDate;slot=locateDaySlot(window._trackerDate);}
-  if(slot.extended)scheduleSave();
+  if(!slot){renderWeekExtendPrompt(app,data);return;}
   var period=data.periods[slot.pi],week=period.weeks[slot.wi],day=week.days[slot.di];
   var goalCal=period.calGoal||2000,stepGoal=period.stepGoal||8000;
   var dateObj=new Date(window._trackerDate);
