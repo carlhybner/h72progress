@@ -662,6 +662,7 @@ function getPeriodStartWeight(pi){var p=window._appData.periods[pi];if(!p)return
 function getPeriodEndWeight(pi){var p=window._appData.periods[pi];if(!p)return null;var last=null;p.weeks.forEach(function(w){var s=weekStats(w);if(s.avgWeight!==null)last=s.avgWeight;});return last;}
 function isPeriodCompleted(pi){var p=window._appData.periods[pi];if(!p)return false;return p.weeks.filter(function(w){return weekStats(w).avgWeight!==null}).length>=2;}
 function isPeriodEmpty(pi){var p=window._appData.periods[pi];if(!p)return true;return p.weeks.every(function(w){var s=weekStats(w);return s.avgWeight===null&&s.totalCal===null&&s.avgSteps===null;});}
+function isWeekEmpty(w){var s=weekStats(w);return s.avgWeight===null&&s.totalCal===null&&s.avgSteps===null;}
 
 function weightDeltaPill(diff){
   if(diff===null||isNaN(diff))return '<span class="delta-pill pill-none">\u2014</span>';
@@ -754,6 +755,9 @@ function buildFullHistorySection(app){
       var calVsGoal=avgCalPerDay!==null?avgCalPerDay-goalCal:null;
       var calVsStr=calVsGoal!==null?(calVsGoal>=0?'+':'')+calVsGoal.toLocaleString()+' kcal/d':'';
       var vsColor=calVsGoal===null?'var(--text-tertiary)':calVsGoal>0?'var(--text-danger)':'var(--text-success)';
+      var isLastWeekOverall=(pi===data.periods.length-1)&&(wi===period.weeks.length-1);
+      var canDeleteWeek=isLastWeekOverall&&isWeekEmpty(week)&&period.weeks.length>1;
+      var deleteWeekBtnHtml=canDeleteWeek?'<button class="icon-btn" data-action="delete-week" data-pi="'+pi+'" data-wi="'+wi+'" title="Remove this empty week" style="padding:3px 7px;font-size:11px;height:24px;color:var(--text-danger);border-color:var(--text-danger);opacity:0.7;flex-shrink:0"><i class="ti ti-trash" style="font-size:12px"></i></button>':'';
 
       var sec=document.createElement('div');sec.className='week-section'+(week.collapsed?' collapsed':'');
       var dayRows=week.days.map(function(d,di){
@@ -774,6 +778,7 @@ function buildFullHistorySection(app){
         '<span class="mini-stat"><i class="ti ti-scale" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgW+'</b>'+(stats.avgWeight!==null?' kg':'')+'</span>'+
         '<span class="mini-stat"><i class="ti ti-flame" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+totalC+'</b>'+(stats.totalCal!==null?' kcal':'')+'</span>'+
         '<span class="mini-stat"><i class="ti ti-shoe" style="font-size:12px;margin-right:2px;vertical-align:-1px"></i><b>'+avgSt+'</b>'+(stats.avgSteps!==null?'/d':'')+'</span>'+
+        deleteWeekBtnHtml+
         '<i class="ti ti-chevron-down chevron"></i></div></div>'+
         '<div class="week-body"><div class="col-headers"><div class="col-hdr">Day</div><div class="col-hdr">Weight</div><div class="col-hdr">Calories</div><div class="col-hdr">Steps</div><div class="col-hdr vs-goal-cell">Cal \u0394</div><div></div></div>'+
         dayRows+'</div>'+
@@ -818,6 +823,16 @@ function buildFullHistorySection(app){
   });
   app.querySelectorAll('[data-action="delete-period"]').forEach(function(btn){
     btn.addEventListener('click',function(e){e.stopPropagation();var pi=parseInt(btn.dataset.pi);if(data.periods.length<=1)return;if(!isPeriodEmpty(pi))return;data.periods.splice(pi,1);scheduleSave();render();});
+  });
+  app.querySelectorAll('[data-action="delete-week"]').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var pi=parseInt(btn.dataset.pi),wi=parseInt(btn.dataset.wi),period=data.periods[pi];
+      if(!period||!period.weeks[wi])return;
+      var isLastWeekOverall=(pi===data.periods.length-1)&&(wi===period.weeks.length-1);
+      if(!isLastWeekOverall||!isWeekEmpty(period.weeks[wi])||period.weeks.length<=1)return;
+      period.weeks.splice(wi,1);scheduleSave();render();
+    });
   });
   app.querySelectorAll('[data-action="toggle-period"]').forEach(function(el){
     el.addEventListener('click',function(){var pi=parseInt(el.dataset.pi);data.periods[pi].collapsed=!data.periods[pi].collapsed;render()});
